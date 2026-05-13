@@ -163,6 +163,253 @@ RULES:
 Write the review now:`
 }
 
+function buildStage1AnalysisPrompt(userHistory, targetItem, predictedRating) {
+  const historyText = userHistory.slice(0, 5).map((r, i) =>
+    `Review ${i + 1}: ${r.stars} stars for "${sanitise(r.item || 'item', 80)}" — "${sanitise(r.text, 240)}"`
+  ).join('\n')
+
+  const targetText = `Name: ${sanitise(targetItem.name, 120)}\nCategory: ${sanitise(targetItem.category || 'Unknown', 60)}\nDescription: ${sanitise(targetItem.description || '', 260)}\nPrice: ${sanitise(targetItem.price || 'Not specified', 40)}`
+
+  return `Analyse this user's review history and respond ONLY in valid JSON with no extra text, no markdown, no backticks. Return exactly this structure:
+{
+  "cares_about": "string",
+  "five_star_trigger": "string",
+  "one_star_trigger": "string",
+  "personality": "string",
+  "writing_traits": "string",
+  "would_focus_on": "string",
+  "predicted_sentiment": "string"
+}
+
+User history:
+${historyText}
+
+Target product:
+${targetText}
+
+Predicted rating: ${predictedRating}`
+}
+
+function buildStage2GenerationPrompt(userHistory, userProfile, analysis, similarUsers, targetItem, predictedRating) {
+  const historyText = userHistory.slice(0, 5).map((r, i) =>
+    `Review ${i + 1}: ${'⭐'.repeat(Math.round(r.stars))} for "${sanitise(r.item || 'item', 80)}"\n"${sanitise(r.text, 240)}"`
+  ).join('\n\n')
+
+  const similarText = similarUsers.slice(0, 3).map((u, i) => {
+    let reviews = []
+    try { reviews = JSON.parse(u.sample_reviews || '[]') } catch (e) {}
+    const sample = reviews[0]?.text ? sanitise(reviews[0].text, 220) : 'No sample available'
+    return `Similar User ${i + 1} sample:\n"${sample}"`
+  }).join('\n\n')
+
+  const allText = userHistory.map(r => r.text || '').join(' ')
+  const styleExample = sanitise(userHistory.find(r => (r.text || '').length > 20)?.text || allText, 180)
+
+  const endsWithO = /\b(o|oo)\s*[.!?]?\s*$/i.test(styleExample)
+  const endsWithSha = /\bsha\s*[.!?]?\s*$/i.test(styleExample)
+  const endsWithOo = /\boo\s*[.!?]?\s*$/i.test(styleExample)
+  const usesDey = /\bdey\b/i.test(allText)
+  const repeatsWords = /\b(\w+)\s+\1\b/i.test(allText.toLowerCase())
+
+  const nigerianInstruction = userProfile.is_nigerian
+    ? `NIGERIAN STYLE INSTRUCTIONS:
+- This user writes in Nigerian Pidgin English with ${userProfile.nigerian_intensity} intensity.
+- End some sentences with ${[endsWithO ? '"o"' : null, endsWithSha ? '"sha"' : null, endsWithOo ? '"oo"' : null].filter(Boolean).join(', ') || '"o/sha/oo" as appropriate'} based on the user's real patterns.
+- ${usesDey ? 'Use "dey" naturally instead of "is/are" when it fits (the user does this).' : 'Only use "dey" if it feels natural for this user.'}
+- ${repeatsWords ? 'Occasionally repeat words for emphasis (the user does this).' : 'Do not overuse repetition.'}
+- Use one real style reference from the user's own writing: "${styleExample}"`
+    : `STYLE REFERENCE from the user's own writing: "${styleExample}"`
+
+  const avgLen = userProfile.avg_review_length
+  const lengthGuide = avgLen > 200 ? 'long and detailed' : avgLen > 80 ? 'medium length' : 'short and punchy'
+
+  const targetText = `Name: ${sanitise(targetItem.name, 120)}\nCategory: ${sanitise(targetItem.category || 'Unknown', 60)}\nDescription: ${sanitise(targetItem.description || '', 260)}\nPrice: ${sanitise(targetItem.price || 'Not specified', 40)}`
+
+  return `You are simulating a real Amazon product reviewer.
+Write EXACTLY how this specific user would write — match their tone, vocabulary, length, and personality.
+
+IMPORTANT RULES:
+- Output ONLY the review text, nothing else
+- No preamble like "Here is the review:"
+- No explanation after the review
+- Match the user's average review length closely (${avgLen} chars typical; aim for ${lengthGuide})
+- The review must feel like a real specific person, not an AI
+- Formatting: write in normal paragraphs. Do NOT put every sentence on a new line. Use line breaks only between paragraphs (max 2).
+
+USER'S REVIEW HISTORY (up to 5):
+${historyText}
+
+STAGE 1 ANALYSIS (JSON-derived):
+- Cares about: ${sanitise(analysis.cares_about, 200)}
+- Five-star trigger: ${sanitise(analysis.five_star_trigger, 200)}
+- One-star trigger: ${sanitise(analysis.one_star_trigger, 200)}
+- Personality: ${sanitise(analysis.personality, 200)}
+- Writing traits: ${sanitise(analysis.writing_traits, 240)}
+- Would focus on: ${sanitise(analysis.would_focus_on, 240)}
+- Predicted sentiment: ${sanitise(analysis.predicted_sentiment, 40)}
+
+WHAT SIMILAR USERS WROTE:
+${similarText || 'No similar users found'}
+
+TARGET PRODUCT:
+${targetText}
+
+PREDICTED RATING: ${predictedRating} out of 5 stars
+
+${nigerianInstruction}
+
+Write the review now:`
+}
+
+function defaultAnalysis(predictedRating) {
+  const sentiment = predictedRating >= 4 ? 'positive' : predictedRating >= 3 ? 'mixed' : 'negative'
+  return {
+    cares_about: 'Quality and value for money',
+    five_star_trigger: 'Product exceeds expectations and works as described',
+    one_star_trigger: 'Does not work as described or feels like poor value',
+    personality: 'Straight-to-the-point and experience-driven reviewer',
+    writing_traits: 'Clear, practical, and focused on what worked vs what did not',
+    would_focus_on: 'Performance, ease of use, durability, and whether it matches the description',
+    predicted_sentiment: sentiment
+  }
+}
+
+function safeParseJsonObject(text) {
+  try {
+    const trimmed = String(text || '').trim()
+    const parsed = JSON.parse(trimmed)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+  } catch (e) {}
+  return null
+}
+
+function computeConfidenceScore(similarUsersCount, { categoryMatch, hasTargetCategory }) {
+  let score = Math.round(similarUsersCount * 8)
+  score = Math.min(85, score)
+
+  if (hasTargetCategory) {
+    if (categoryMatch) score = Math.min(95, score + 10)
+    else score = Math.min(70, score)
+  } else {
+    score = Math.min(80, score)
+  }
+
+  if (similarUsersCount < 3) score = Math.min(60, score)
+
+  score = Math.max(0, Math.min(95, score))
+  return score
+}
+
+function wordCount(text) {
+  const tokens = String(text || '').trim().split(/\s+/).filter(Boolean)
+  return tokens.length
+}
+
+function computeUserWordStats(userHistory) {
+  const counts = (userHistory || []).map(r => wordCount(r?.text)).filter(n => Number.isFinite(n) && n > 0)
+  if (counts.length === 0) return { avgWords: 0, stdWords: 0, minWords: 0, maxWords: 0 }
+
+  const avgWords = counts.reduce((a, b) => a + b, 0) / counts.length
+  const variance = counts.reduce((acc, n) => acc + Math.pow(n - avgWords, 2), 0) / counts.length
+  const stdWords = Math.sqrt(variance)
+
+  return {
+    avgWords,
+    stdWords,
+    minWords: Math.min(...counts),
+    maxWords: Math.max(...counts)
+  }
+}
+
+function computeTargetWordRange(userHistory) {
+  const stats = computeUserWordStats(userHistory)
+  const avg = stats.avgWords || 0
+  const std = stats.stdWords || 0
+
+  // Predicted length: mostly user's average, slightly stabilized.
+  const predicted = Math.round(avg * 0.9 + Math.min(12, avg * 0.1))
+
+  const min = Math.max(25, Math.round(predicted - Math.max(12, std)))
+  const max = Math.min(220, Math.round(predicted + Math.max(18, std)))
+
+  return { predicted, min, max, stats }
+}
+
+function clipToMaxWords(text, maxWords) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean)
+  if (words.length <= maxWords) return String(text || '').trim()
+  return words.slice(0, maxWords).join(' ').replace(/[,\s]+$/g, '').trim()
+}
+
+function normalizeLineBreaks(text) {
+  const raw = String(text || '').replace(/\r\n/g, '\n')
+  const paragraphs = raw.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
+  if (paragraphs.length === 0) return ''
+
+  const normalizePara = (para) => {
+    const lines = para.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length <= 1) return para.trim()
+
+    const punctEnds = lines.filter(l => /[.!?]$/.test(l)).length
+    const manyShortLines = lines.filter(l => l.length <= 90).length
+    const looksLikeOneSentencePerLine = punctEnds / lines.length >= 0.6 && manyShortLines / lines.length >= 0.6
+
+    if (!looksLikeOneSentencePerLine) return lines.join(' ')
+
+    // Join sentence-per-line output into a proper paragraph.
+    return lines.join(' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  }
+
+  const normalized = paragraphs.map(normalizePara).join('\n\n')
+  return normalized.replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function deCliche(text) {
+  let out = String(text || '')
+  const replacements = [
+    { re: /\bhassle\b/gi, to: 'stress' },
+    { re: /\bgame[- ]changer\b/gi, to: 'big difference' },
+    { re: /\bseamless\b/gi, to: 'smooth' },
+    { re: /\btop[- ]notch\b/gi, to: 'very good' },
+    { re: /\bhighly recommend\b/gi, to: 'I recommend' },
+    { re: /\bmust[- ]have\b/gi, to: 'worth it' },
+    { re: /\babsolutely love\b/gi, to: 'I really like' },
+    { re: /\bblew me away\b/gi, to: 'surprised me' },
+    { re: /\bchanged my life\b/gi, to: 'helped a lot' }
+  ]
+  for (const { re, to } of replacements) out = out.replace(re, to)
+  return out.trim()
+}
+
+function reviewIssues(text, wordRange) {
+  const t = String(text || '').trim()
+  const words = wordCount(t)
+  const sentences = (t.match(/[.!?]/g) || []).length
+
+  const banned = [
+    /\bhassle\b/i,
+    /\bseamless\b/i,
+    /\bgame[- ]changer\b/i,
+    /\btop[- ]notch\b/i,
+    /\bmust[- ]have\b/i,
+    /\bhighly recommend\b/i,
+    /\bblew me away\b/i,
+    /\bchanged my life\b/i
+  ]
+
+  const tooShort = words > 0 && words < wordRange.min
+  const tooFlat = words > 45 && sentences < 2
+  const hasBanned = banned.some(re => re.test(t))
+
+  const issues = []
+  if (tooShort) issues.push('too_short')
+  if (tooFlat) issues.push('too_flat')
+  if (hasBanned) issues.push('banned_words')
+  return { issues, words, sentences }
+}
+
 // ─── MAIN SIMULATE ENDPOINT ───────────────────────────
 app.post('/api/simulate', async (req, res) => {
   try {
@@ -180,46 +427,156 @@ app.post('/api/simulate', async (req, res) => {
     const userProfile = buildLiveProfile(user_history)
 
     // step 2 — search pinecone for similar users
-    const searchResults = await index.searchRecords({
-      query: {
-        inputs: { text: userProfile.summary },
-        topK: 10
-      },
-      fields: ['user_id', 'avg_rating', 'harshness', 'is_nigerian',
-               'nigerian_intensity', 'sample_reviews', 'profile_summary']
-    })
+    const pineconeFields = ['user_id', 'avg_rating', 'harshness', 'is_nigerian',
+      'nigerian_intensity', 'sample_reviews', 'profile_summary']
 
-    const similarUsers = searchResults.result?.hits?.map(h => h.fields) || []
+    const targetCategoryRaw = (target_item.category || '').trim()
+    let categoryMatch = false
+
+    let searchResults = null
+    let similarUsers = []
+
+    if (targetCategoryRaw) {
+      try {
+        const filtered = await index.searchRecords({
+          query: {
+            inputs: { text: userProfile.summary },
+            topK: 10,
+            filter: { categories: { $eq: targetCategoryRaw } }
+          },
+          fields: pineconeFields
+        })
+        const filteredUsers = filtered.result?.hits?.map(h => h.fields) || []
+        if (filteredUsers.length >= 3) {
+          similarUsers = filteredUsers
+          categoryMatch = true
+        }
+      } catch (e) {
+        console.warn('⚠️ Pinecone filtered search failed, falling back:', e.message)
+      }
+    }
+
+    if (similarUsers.length < 3) {
+      searchResults = await index.searchRecords({
+        query: {
+          inputs: { text: userProfile.summary },
+          topK: 10
+        },
+        fields: pineconeFields
+      })
+      similarUsers = searchResults.result?.hits?.map(h => h.fields) || []
+      categoryMatch = false
+    }
 
     // step 3 — predict rating mathematically
     const predictedRating = predictRating(userProfile, similarUsers)
 
-    // step 4 — build prompt
-    const prompt = buildPrompt(
+    const start = Date.now()
+
+    // step 4 — stage 1 analysis
+    console.log('🧠 Stage 1: Analysing user behaviour...')
+    const stage1Prompt = buildStage1AnalysisPrompt(user_history, target_item, predictedRating)
+    let analysis = defaultAnalysis(predictedRating)
+
+    try {
+      const stage1 = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: stage1Prompt }],
+        max_tokens: 500,
+        temperature: 0.3
+      })
+      const stage1Text = stage1.choices?.[0]?.message?.content || ''
+      const parsed = safeParseJsonObject(stage1Text)
+      if (parsed) analysis = { ...analysis, ...parsed }
+      else console.warn('⚠️ Stage 1 JSON parse failed, using defaults')
+    } catch (e) {
+      console.warn('⚠️ Stage 1 failed, using defaults:', e.message)
+    }
+
+    // step 5 — stage 2 generation
+    console.log('✍️  Stage 2: Generating review...')
+    const wordRange = computeTargetWordRange(user_history)
+    const stage2Prompt = buildStage2GenerationPrompt(
       user_history,
       userProfile,
+      analysis,
       similarUsers,
       target_item,
       predictedRating
     )
 
-    // step 5 — call groq
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 400,
-      temperature: 0.85
-    })
+    let simulatedReview = ''
+    try {
+      const stage2 = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{
+          role: 'user',
+          content: `${stage2Prompt}
 
-    const simulatedReview = completion.choices[0].message.content.trim()
+LENGTH TARGET (very important):
+- Aim for about ${wordRange.predicted} words (keep it between ${wordRange.min} and ${wordRange.max} words).
+
+WORD CHOICE RULE (very important):
+- Avoid AI-ish/cliché words/phrases like "hassle", "seamless", "game-changer", "top-notch", "must-have", "blew me away", "changed my life", "highly recommend".`
+        }],
+        max_tokens: Math.min(800, Math.max(180, Math.round(wordRange.max * 2))),
+        temperature: 0.85
+      })
+      simulatedReview = (stage2.choices?.[0]?.message?.content || '').trim()
+    } catch (e) {
+      console.error('❌ Stage 2 generation error:', e.message)
+      return res.status(500).json({ error: 'Failed to generate simulated review. Please try again.' })
+    }
+
+    const firstCheck = reviewIssues(simulatedReview, wordRange)
+    if (firstCheck.issues.length > 0) {
+      try {
+        const retry = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{
+            role: 'user',
+            content: `Rewrite the review below to match the user's real style.
+
+Hard requirements:
+- Output ONLY the review text, nothing else
+- Keep it between ${wordRange.min} and ${wordRange.max} words (aim ~${wordRange.predicted})
+- Use normal paragraphs (1–3). Do NOT put every sentence on a new line.
+- Be specific (mention concrete issues/details), avoid generic lines
+- Avoid these words/phrases: "hassle", "seamless", "game-changer", "top-notch", "must-have", "blew me away", "changed my life", "highly recommend"
+
+Original review:
+${simulatedReview}`
+          }],
+          max_tokens: Math.min(800, Math.max(180, Math.round(wordRange.max * 2))),
+          temperature: 0.85
+        })
+        simulatedReview = (retry.choices?.[0]?.message?.content || '').trim()
+      } catch (e) {
+        console.warn('⚠️ Stage 2 retry failed, using first output:', e.message)
+      }
+    }
+
+    simulatedReview = normalizeLineBreaks(simulatedReview)
+    simulatedReview = deCliche(simulatedReview)
+    simulatedReview = clipToMaxWords(simulatedReview, wordRange.max)
+    simulatedReview = normalizeLineBreaks(simulatedReview)
+
+    console.log(`✅ Done in ${Date.now() - start}ms`)
 
     // step 6 — return result
+    const confidenceScore = computeConfidenceScore(similarUsers.length, {
+      categoryMatch,
+      hasTargetCategory: Boolean(targetCategoryRaw)
+    })
+
     res.json({
       predicted_rating: predictedRating,
       simulated_review: simulatedReview,
-      confidence_score: Math.min(100, Math.round(similarUsers.length * 10)),
+      confidence_score: confidenceScore,
+      analysis,
       reasoning: {
         similar_users_found: similarUsers.length,
+        category_match: categoryMatch,
         user_bias: parseFloat((userProfile.avg_rating - 4.38).toFixed(2)),
         harshness: userProfile.harshness,
         style_detected: userProfile.is_nigerian

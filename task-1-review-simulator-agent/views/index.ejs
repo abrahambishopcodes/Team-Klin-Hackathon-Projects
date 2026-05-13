@@ -3,74 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Review Simulator Agent — Team Klin</title>
+  <title>Review Simulator Agent</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0a0a0f;
-      --surface:  #13131a;
-      --border:   #1e1e2e;
-      --accent:   #7c6af7;
-      --accent2:  #f7a26a;
-      --text:     #e8e8f0;
-      --muted:    #6b6b80;
-      --success:  #4ade80;
-      --error:    #f87171;
+      --bg: #0b0c0f;
+      --surface: #111318;
+      --surface2: #151822;
+      --border: #212634;
+      --text: #eef0f6;
+      --muted: #9aa3b2;
+      --muted2: #737c8c;
+      --shadow: rgba(0,0,0,0.45);
+      --success: #a7f3d0;
+      --error: #fca5a5;
+      --focus: #c7cbd6;
     }
 
     body {
-      font-family: 'Syne', sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 2rem 1rem;
+      padding: 2.25rem 1.25rem;
     }
 
-    /* ── HEADER ── */
-    header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-    .badge {
-      display: inline-block;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.9rem;
-      border-radius: 999px;
-      margin-bottom: 1rem;
-    }
-    h1 {
-      font-size: clamp(1.8rem, 5vw, 3rem);
-      font-weight: 800;
-      line-height: 1.1;
-      background: linear-gradient(135deg, #fff 40%, var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
-    }
-    header p {
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+    a { color: inherit; }
+    ::selection { background: rgba(255,255,255,0.12); }
 
     /* ── LAYOUT ── */
+    .shell { max-width: 1040px; margin: 0 auto; }
+    header { margin-bottom: 1.4rem; }
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 1.1rem 1.2rem;
+      box-shadow: 0 14px 30px var(--shadow);
+    }
+    .brand { display: flex; gap: 0.9rem; align-items: flex-start; }
+    .brand-badge {
+      width: 40px; height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: var(--surface2);
+      flex: 0 0 auto;
+    }
+    .brand h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.15rem;
+    }
+    .brand p {
+      color: var(--muted);
+      font-size: 0.82rem;
+      max-width: 62ch;
+      line-height: 1.35;
+    }
+    .meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      color: var(--muted2);
+      font-size: 0.76rem;
+      white-space: nowrap;
+      padding-top: 0.15rem;
+    }
+    .meta .dot {
+      width: 4px; height: 4px; border-radius: 999px; background: var(--muted2);
+      display: inline-block;
+    }
+
     .container {
-      max-width: 900px;
-      margin: 0 auto;
+      margin-top: 1.2rem;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1rem;
     }
-    @media (max-width: 700px) {
-      .container { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 860px) { .container { grid-template-columns: 1fr; } }
 
     /* ── CARDS ── */
     .card {
@@ -78,14 +98,38 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.5rem;
+      box-shadow: 0 14px 30px var(--shadow);
+      transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     }
-    .card h2 {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+    .card:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.14); }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .card-title h2 {
+      font-size: 0.78rem;
+      font-weight: 650;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1.2rem;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .pill {
+      font-size: 0.72rem;
+      color: var(--muted2);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
     }
 
     /* ── FORM ── */
@@ -100,25 +144,25 @@
 
     input, textarea, select {
       width: 100%;
-      background: var(--bg);
+      background: #0c0e13;
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
-      font-family: 'DM Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.82rem;
       padding: 0.65rem 0.85rem;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.15s ease, transform 0.15s ease;
       resize: vertical;
     }
     input:focus, textarea:focus {
-      border-color: var(--accent);
+      border-color: var(--focus);
     }
 
     /* ── REVIEWS LIST ── */
     #reviews-list { margin-bottom: 1rem; }
     .review-item {
-      background: var(--bg);
+      background: #0c0e13;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.7rem;
@@ -128,18 +172,22 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.5rem;
+      transition: transform 140ms ease, border-color 140ms ease;
     }
+    .review-item:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.14); }
     .review-item .review-content { flex: 1; }
-    .review-item .stars { color: var(--accent2); font-size: 0.9rem; }
+    .review-item .stars { color: var(--text); font-size: 0.82rem; opacity: 0.92; }
     .review-item .remove-btn {
       background: none;
       border: none;
-      color: var(--error);
+      color: var(--muted2);
       cursor: pointer;
       font-size: 1rem;
       padding: 0;
       line-height: 1;
+      transition: color 140ms ease, transform 140ms ease;
     }
+    .review-item .remove-btn:hover { color: var(--error); transform: translateY(-1px); }
 
     /* ── ADD REVIEW FORM ── */
     .add-review-row {
@@ -160,26 +208,28 @@
       gap: 0.4rem;
       padding: 0.7rem 1.2rem;
       border-radius: 8px;
-      border: none;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font-weight: 650;
       font-size: 0.85rem;
       cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
+      transition: opacity 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
     }
     .btn:active { transform: scale(0.98); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #5b4dd4);
-      color: #fff;
+      background: #0c0e13;
+      border-color: rgba(255,255,255,0.16);
       width: 100%;
       margin-top: 1.2rem;
       padding: 0.9rem;
       font-size: 0.95rem;
     }
+    .btn-primary:hover { border-color: rgba(255,255,255,0.28); }
     .btn-sm {
-      background: var(--border);
-      color: var(--text);
+      background: #0c0e13;
       font-size: 0.75rem;
       padding: 0.5rem 0.8rem;
     }
@@ -197,24 +247,25 @@
       gap: 1rem;
       margin-bottom: 1.5rem;
       padding: 1rem;
-      background: var(--bg);
+      background: #0c0e13;
       border-radius: 12px;
+      border: 1px solid var(--border);
     }
     .rating-number {
       font-size: 3rem;
       font-weight: 800;
-      color: var(--accent2);
+      color: var(--text);
       line-height: 1;
     }
     .rating-stars { font-size: 1.4rem; }
     .rating-label { color: var(--muted); font-size: 0.8rem; }
 
     .review-output {
-      background: var(--bg);
-      border-left: 3px solid var(--accent);
-      border-radius: 0 8px 8px 0;
+      background: #0c0e13;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem 1.2rem;
-      font-family: 'DM Mono', monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.88rem;
       line-height: 1.7;
       white-space: pre-wrap;
@@ -227,11 +278,13 @@
       gap: 0.8rem;
     }
     .reasoning-item {
-      background: var(--bg);
+      background: #0c0e13;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.8rem;
+      transition: transform 140ms ease, border-color 140ms ease;
     }
+    .reasoning-item:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.14); }
     .reasoning-item .r-label {
       font-size: 0.68rem;
       color: var(--muted);
@@ -264,7 +317,7 @@
     }
     .bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      background: rgba(255,255,255,0.85);
       border-radius: 999px;
       transition: width 0.8s ease;
     }
@@ -272,28 +325,94 @@
     /* ── LOADER ── */
     .loader {
       display: none;
-      text-align: center;
-      padding: 2rem;
+      padding: 1.25rem;
       color: var(--muted);
-      font-size: 0.9rem;
       grid-column: 1 / -1;
     }
     .loader.visible { display: block; }
-    .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 1rem;
+    .loader-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 1.25rem 1.25rem;
+      box-shadow: 0 14px 30px var(--shadow);
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 1.2rem;
+      align-items: center;
     }
+    @media (max-width: 560px) {
+      .loader-card { grid-template-columns: 1fr; }
+    }
+    .gears {
+      display: grid;
+      place-items: center;
+      min-height: 110px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #0c0e13;
+      overflow: hidden;
+      position: relative;
+    }
+    .gear {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      opacity: 0.92;
+      will-change: transform;
+    }
+    .gear g, .gear path, .gear circle { stroke: rgba(255,255,255,0.8); }
+    .gear .fill { fill: transparent; }
+    .gear.a { transform-origin: 50% 50%; animation: spin 1.25s linear infinite; left: 22px; top: 18px; }
+    .gear.b { transform-origin: 50% 50%; animation: spinR 1.65s linear infinite; left: 58px; top: 44px; opacity: 0.7; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spinR { to { transform: rotate(-360deg); } }
+    .status {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .status .row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text);
+    }
+    .status .row .label {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .status .big {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .status .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.82rem;
+      color: var(--muted2);
+      border: 1px solid var(--border);
+      background: #0c0e13;
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      overflow: hidden;
+    }
+    .fade {
+      animation: fade 1.2s ease both;
+    }
+    @keyframes fade {
+      0% { opacity: 0; transform: translateY(2px); }
+      15% { opacity: 1; transform: translateY(0px); }
+      85% { opacity: 1; }
+      100% { opacity: 0.65; }
+    }
 
     /* ── ERROR ── */
     .error-msg {
       display: none;
-      background: #2a1515;
+      background: #130c0c;
       border: 1px solid var(--error);
       color: var(--error);
       border-radius: 8px;
@@ -307,17 +426,35 @@
 </head>
 <body>
 
-<header>
-  <div class="badge">DSN × BCT Hackathon 3.0 — Team Klin</div>
-  <h1>Review Simulator Agent</h1>
-  <p>Paste a user's history, enter a product — watch the AI become that user.</p>
-</header>
+<div class="shell">
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">
+          <i class="fa-solid fa-terminal"></i>
+        </div>
+        <div>
+          <h1>Review Simulator Agent</h1>
+          <p>Simulate how a specific reviewer would evaluate a target product using their prior reviews + nearest-neighbour context.</p>
+        </div>
+      </div>
+      <div class="meta" aria-label="System status">
+        <i class="fa-regular fa-circle-check"></i>
+        <span>API ready</span>
+        <span class="dot" aria-hidden="true"></span>
+        <span>v1</span>
+      </div>
+    </div>
+  </header>
 
-<div class="container">
+  <div class="container">
 
   <!-- ── LEFT: USER HISTORY ── -->
   <div class="card">
-    <h2>📋 User Review History</h2>
+    <div class="card-title">
+      <h2><i class="fa-solid fa-list-check"></i> User Review History</h2>
+      <span class="pill"><i class="fa-solid fa-database"></i> local session</span>
+    </div>
 
     <div id="reviews-list"></div>
 
@@ -337,13 +474,16 @@
     <textarea id="new-text" rows="3" placeholder="What did the user say?"></textarea>
 
     <button class="btn btn-sm" style="margin-top:0.8rem" onclick="addReview()">
-      + Add Review
+      <i class="fa-solid fa-plus"></i> Add Review
     </button>
   </div>
 
   <!-- ── RIGHT: TARGET PRODUCT ── -->
   <div class="card">
-    <h2>🎯 Target Product</h2>
+    <div class="card-title">
+      <h2><i class="fa-solid fa-bullseye"></i> Target Product</h2>
+      <span class="pill"><i class="fa-solid fa-layer-group"></i> input</span>
+    </div>
 
     <label>Product Name</label>
     <input type="text" id="item-name" placeholder="e.g. Vitamin C Serum" />
@@ -359,7 +499,7 @@
     <input type="text" id="item-price" placeholder="e.g. $15 or ₦5,000" />
 
     <button class="btn btn-primary" id="simulate-btn" onclick="simulate()">
-      ⚡ Simulate Review
+      <i class="fa-solid fa-play"></i> Run Simulation
     </button>
 
     <div class="error-msg" id="error-msg"></div>
@@ -367,13 +507,35 @@
 
   <!-- ── LOADER ── -->
   <div class="loader" id="loader">
-    <div class="spinner"></div>
-    Analysing user behaviour and generating review...
+    <div class="loader-card" role="status" aria-live="polite">
+      <div class="gears" aria-hidden="true">
+        <svg class="gear a" viewBox="0 0 64 64" fill="none">
+          <path class="fill" d="M32 20a12 12 0 1 0 0 24a12 12 0 0 0 0-24Z" stroke-width="2"/>
+          <path d="M32 10l3 3l5-1l2 4l5 2l-1 5l3 3l-3 3l1 5l-5 2l-2 4l-5-1l-3 3l-3-3l-5 1l-2-4l-5-2l1-5l-3-3l3-3l-1-5l5-2l2-4l5 1l3-3Z" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="32" cy="32" r="10" stroke-width="2"/>
+        </svg>
+        <svg class="gear b" viewBox="0 0 64 64" fill="none">
+          <path d="M32 12l3 4l6-1l2 5l6 2l-1 6l4 3l-4 3l1 6l-6 2l-2 5l-6-1l-3 4l-3-4l-6 1l-2-5l-6-2l1-6l-4-3l4-3l-1-6l6-2l2-5l6 1l3-4Z" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="32" cy="32" r="9" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="status">
+        <div class="row">
+          <span class="label">Pipeline</span>
+          <span class="pill"><i class="fa-solid fa-microchip"></i> retrieval → analysis → generation</span>
+        </div>
+        <div class="big" id="status-line">Initializing request…</div>
+        <div class="mono fade" id="status-mono">Allocating context window · validating payload · warming model</div>
+      </div>
+    </div>
   </div>
 
   <!-- ── OUTPUT ── -->
   <div class="card output-card" id="output-card">
-    <h2>🤖 Simulated Output</h2>
+    <div class="card-title">
+      <h2><i class="fa-solid fa-square-poll-vertical"></i> Simulated Output</h2>
+      <span class="pill"><i class="fa-solid fa-file-lines"></i> result</span>
+    </div>
 
     <div class="rating-display">
       <div class="rating-number" id="out-rating">—</div>
@@ -395,14 +557,73 @@
 
     <div class="review-output" id="out-review"></div>
 
-    <h2 style="margin-bottom:0.8rem">🔍 Reasoning</h2>
+    <div class="card-title" style="margin-top:0.2rem;margin-bottom:0.6rem">
+      <h2><i class="fa-solid fa-magnifying-glass"></i> Reasoning</h2>
+      <span class="pill"><i class="fa-solid fa-sitemap"></i> diagnostics</span>
+    </div>
     <div class="reasoning" id="out-reasoning"></div>
+
+    <div class="card-title" style="margin-top:1.05rem;margin-bottom:0.6rem">
+      <h2><i class="fa-solid fa-brain"></i> Analysis</h2>
+      <span class="pill"><i class="fa-solid fa-code"></i> stage 1</span>
+    </div>
+    <div class="reasoning" id="out-analysis"></div>
   </div>
 
-</div>
+</div></div>
 
 <script>
   let reviews = []
+  let statusTimer = null
+  let statusIndex = 0
+  let stageIndex = 0
+
+  const statusLines = [
+    'Indexing user behaviour vectors…',
+    'Computing stylistic priors from user history…',
+    'Applying category-aware retrieval constraints…',
+    'Scoring nearest-neighbour reviewers…',
+    'Deriving sentiment + trigger heuristics…',
+    'Synthesizing reviewer voice constraints…',
+    'Generating draft response…',
+    'Running post-generation validation…',
+    'Finalizing output payload…'
+  ]
+
+  const statusMono = [
+    'Tokenizing reviews · estimating length distribution · normalizing signals',
+    'Retrieval: topK=10 · filter=category? · fallback=unfiltered if sparse',
+    'Analysis: extracting triggers · writing traits · focus areas · predicted sentiment',
+    'Generation: enforcing persona · length bounds · anti-cliché constraints',
+    'Post-process: de-cliché · cap max words · sanitize output'
+  ]
+
+  function startStatusTicker() {
+    stopStatusTicker()
+    statusIndex = 0
+    stageIndex = 0
+    const lineEl = document.getElementById('status-line')
+    const monoEl = document.getElementById('status-mono')
+    if (!lineEl || !monoEl) return
+
+    const tick = () => {
+      lineEl.textContent = statusLines[statusIndex % statusLines.length]
+      monoEl.textContent = statusMono[stageIndex % statusMono.length]
+      monoEl.classList.remove('fade')
+      void monoEl.offsetWidth
+      monoEl.classList.add('fade')
+      statusIndex++
+      if (statusIndex % 2 === 0) stageIndex++
+    }
+
+    tick()
+    statusTimer = setInterval(tick, 1150)
+  }
+
+  function stopStatusTicker() {
+    if (statusTimer) clearInterval(statusTimer)
+    statusTimer = null
+  }
 
   // ── ADD REVIEW ──
   function addReview() {
@@ -464,6 +685,7 @@
     document.getElementById('loader').classList.add('visible')
     document.getElementById('output-card').classList.remove('visible')
     document.getElementById('simulate-btn').disabled = true
+    startStatusTicker()
 
     try {
       const response = await fetch('/api/simulate', {
@@ -490,6 +712,7 @@
     } finally {
       document.getElementById('loader').classList.remove('visible')
       document.getElementById('simulate-btn').disabled = false
+      stopStatusTicker()
     }
   }
 
@@ -528,11 +751,35 @@
       </div>
     `
 
+    const a = data.analysis || {}
+    document.getElementById('out-analysis').innerHTML = `
+      <div class="reasoning-item">
+        <div class="r-label">Cares About</div>
+        <div class="r-value" style="font-size:0.78rem;line-height:1.3">${escapeHtml(a.cares_about || '—')}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Personality</div>
+        <div class="r-value" style="font-size:0.78rem;line-height:1.3">${escapeHtml(a.personality || '—')}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Would Focus On</div>
+        <div class="r-value" style="font-size:0.78rem;line-height:1.3">${escapeHtml(a.would_focus_on || '—')}</div>
+      </div>
+    `
+
     document.getElementById('output-card').classList.add('visible')
     document.getElementById('output-card').scrollIntoView({ behavior: 'smooth' })
   }
 
   // ── HELPERS ──
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
   function showError(msg) {
     const el = document.getElementById('error-msg')
     el.textContent = msg
