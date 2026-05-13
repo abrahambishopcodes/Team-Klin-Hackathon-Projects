@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Review Simulator Agent — Team Klin</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #13131a;
+      --border:   #1e1e2e;
+      --accent:   #7c6af7;
+      --accent2:  #f7a26a;
+      --text:     #e8e8f0;
+      --muted:    #6b6b80;
+      --success:  #4ade80;
+      --error:    #f87171;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 700px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+    .card h2 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── FORM ── */
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      margin-top: 1rem;
+    }
+    label:first-of-type { margin-top: 0; }
+
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── REVIEWS LIST ── */
+    #reviews-list { margin-bottom: 1rem; }
+    .review-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .review-item .review-content { flex: 1; }
+    .review-item .stars { color: var(--accent2); font-size: 0.9rem; }
+    .review-item .remove-btn {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+      line-height: 1;
+    }
+
+    /* ── ADD REVIEW FORM ── */
+    .add-review-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .star-select {
+      width: 80px !important;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #5b4dd4);
+      color: #fff;
+      width: 100%;
+      margin-top: 1.2rem;
+      padding: 0.9rem;
+      font-size: 0.95rem;
+    }
+    .btn-sm {
+      background: var(--border);
+      color: var(--text);
+      font-size: 0.75rem;
+      padding: 0.5rem 0.8rem;
+    }
+
+    /* ── OUTPUT ── */
+    .output-card {
+      grid-column: 1 / -1;
+      display: none;
+    }
+    .output-card.visible { display: block; }
+
+    .rating-display {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 12px;
+    }
+    .rating-number {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--accent2);
+      line-height: 1;
+    }
+    .rating-stars { font-size: 1.4rem; }
+    .rating-label { color: var(--muted); font-size: 0.8rem; }
+
+    .review-output {
+      background: var(--bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .reasoning {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.8rem;
+    }
+    .reasoning-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem;
+    }
+    .reasoning-item .r-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
+    }
+    .reasoning-item .r-value {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ── CONFIDENCE BAR ── */
+    .confidence-bar-wrap {
+      margin-bottom: 1.2rem;
+    }
+    .confidence-bar-wrap .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width 0.8s ease;
+    }
+
+    /* ── LOADER ── */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      grid-column: 1 / -1;
+    }
+    .loader.visible { display: block; }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none;
+      background: #2a1515;
+      border: 1px solid var(--error);
+      color: var(--error);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      grid-column: 1 / -1;
+    }
+    .error-msg.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">DSN × BCT Hackathon 3.0 — Team Klin</div>
+  <h1>Review Simulator Agent</h1>
+  <p>Paste a user's history, enter a product — watch the AI become that user.</p>
+</header>
+
+<div class="container">
+
+  <!-- ── LEFT: USER HISTORY ── -->
+  <div class="card">
+    <h2>📋 User Review History</h2>
+
+    <div id="reviews-list"></div>
+
+    <label>Item Name</label>
+    <input type="text" id="new-item" placeholder="e.g. Face Cream" />
+
+    <label>Star Rating</label>
+    <select id="new-stars" class="star-select">
+      <option value="5">⭐⭐⭐⭐⭐ 5</option>
+      <option value="4">⭐⭐⭐⭐ 4</option>
+      <option value="3">⭐⭐⭐ 3</option>
+      <option value="2">⭐⭐ 2</option>
+      <option value="1">⭐ 1</option>
+    </select>
+
+    <label>Review Text</label>
+    <textarea id="new-text" rows="3" placeholder="What did the user say?"></textarea>
+
+    <button class="btn btn-sm" style="margin-top:0.8rem" onclick="addReview()">
+      + Add Review
+    </button>
+  </div>
+
+  <!-- ── RIGHT: TARGET PRODUCT ── -->
+  <div class="card">
+    <h2>🎯 Target Product</h2>
+
+    <label>Product Name</label>
+    <input type="text" id="item-name" placeholder="e.g. Vitamin C Serum" />
+
+    <label>Category</label>
+    <input type="text" id="item-category" placeholder="e.g. Beauty, Health, Handmade" />
+
+    <label>Description</label>
+    <textarea id="item-description" rows="3"
+      placeholder="Briefly describe the product..."></textarea>
+
+    <label>Price (optional)</label>
+    <input type="text" id="item-price" placeholder="e.g. $15 or ₦5,000" />
+
+    <button class="btn btn-primary" id="simulate-btn" onclick="simulate()">
+      ⚡ Simulate Review
+    </button>
+
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- ── LOADER ── -->
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    Analysing user behaviour and generating review...
+  </div>
+
+  <!-- ── OUTPUT ── -->
+  <div class="card output-card" id="output-card">
+    <h2>🤖 Simulated Output</h2>
+
+    <div class="rating-display">
+      <div class="rating-number" id="out-rating">—</div>
+      <div>
+        <div class="rating-stars" id="out-stars"></div>
+        <div class="rating-label">Predicted Star Rating</div>
+      </div>
+    </div>
+
+    <div class="confidence-bar-wrap">
+      <div class="bar-label">
+        <span>Confidence Score</span>
+        <span id="out-confidence">—</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill" id="conf-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="review-output" id="out-review"></div>
+
+    <h2 style="margin-bottom:0.8rem">🔍 Reasoning</h2>
+    <div class="reasoning" id="out-reasoning"></div>
+  </div>
+
+</div>
+
+<script>
+  let reviews = []
+
+  // ── ADD REVIEW ──
+  function addReview() {
+    const item  = document.getElementById('new-item').value.trim()
+    const stars = parseInt(document.getElementById('new-stars').value)
+    const text  = document.getElementById('new-text').value.trim()
+
+    if (!item || !text) {
+      alert('Please fill in the item name and review text')
+      return
+    }
+
+    reviews.push({ item, stars, text })
+    renderReviews()
+
+    document.getElementById('new-item').value = ''
+    document.getElementById('new-text').value = ''
+  }
+
+  // ── RENDER REVIEWS ──
+  function renderReviews() {
+    const list = document.getElementById('reviews-list')
+    if (reviews.length === 0) {
+      list.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;margin-bottom:1rem">No reviews added yet.</p>'
+      return
+    }
+    list.innerHTML = reviews.map((r, i) => `
+      <div class="review-item">
+        <div class="review-content">
+          <div class="stars">${'⭐'.repeat(r.stars)} <strong>${r.item}</strong></div>
+          <div style="color:var(--muted);margin-top:0.3rem">${r.text.slice(0, 80)}${r.text.length > 80 ? '...' : ''}</div>
+        </div>
+        <button class="remove-btn" onclick="removeReview(${i})">✕</button>
+      </div>
+    `).join('')
+  }
+
+  // ── REMOVE REVIEW ──
+  function removeReview(i) {
+    reviews.splice(i, 1)
+    renderReviews()
+  }
+
+  // ── SIMULATE ──
+  async function simulate() {
+    if (reviews.length === 0) {
+      showError('Please add at least one review to the user history.')
+      return
+    }
+
+    const name = document.getElementById('item-name').value.trim()
+    if (!name) {
+      showError('Please enter a product name.')
+      return
+    }
+
+    // show loader
+    hideError()
+    document.getElementById('loader').classList.add('visible')
+    document.getElementById('output-card').classList.remove('visible')
+    document.getElementById('simulate-btn').disabled = true
+
+    try {
+      const response = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_history: reviews,
+          target_item: {
+            name,
+            category: document.getElementById('item-category').value.trim(),
+            description: document.getElementById('item-description').value.trim(),
+            price: document.getElementById('item-price').value.trim()
+          }
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Something went wrong')
+
+      showOutput(data)
+
+    } catch (e) {
+      showError(e.message)
+    } finally {
+      document.getElementById('loader').classList.remove('visible')
+      document.getElementById('simulate-btn').disabled = false
+    }
+  }
+
+  // ── SHOW OUTPUT ──
+  function showOutput(data) {
+    document.getElementById('out-rating').textContent = data.predicted_rating
+    document.getElementById('out-stars').textContent =
+      '⭐'.repeat(Math.round(data.predicted_rating))
+    document.getElementById('out-review').textContent = data.simulated_review
+
+    const conf = data.confidence_score
+    document.getElementById('out-confidence').textContent = conf + '%'
+    document.getElementById('conf-bar').style.width = conf + '%'
+
+    const r = data.reasoning
+    document.getElementById('out-reasoning').innerHTML = `
+      <div class="reasoning-item">
+        <div class="r-label">Similar Users</div>
+        <div class="r-value">${r.similar_users_found}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">User Bias</div>
+        <div class="r-value">${r.user_bias > 0 ? '+' : ''}${r.user_bias}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Rater Type</div>
+        <div class="r-value">${r.harshness}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Style</div>
+        <div class="r-value" style="font-size:0.75rem">${r.style_detected}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Avg Length</div>
+        <div class="r-value">${r.avg_review_length} chars</div>
+      </div>
+    `
+
+    document.getElementById('output-card').classList.add('visible')
+    document.getElementById('output-card').scrollIntoView({ behavior: 'smooth' })
+  }
+
+  // ── HELPERS ──
+  function showError(msg) {
+    const el = document.getElementById('error-msg')
+    el.textContent = msg
+    el.classList.add('visible')
+  }
+  function hideError() {
+    document.getElementById('error-msg').classList.remove('visible')
+  }
+
+  // init
+  renderReviews()
+</script>
+</body>
+</html>

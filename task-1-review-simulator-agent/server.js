@@ -240,10 +240,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Review Simulator API is running' })
 })
 
-// ─── SERVE REACT FRONTEND ─────────────────────────────
+// ─── SERVE VIEWS ──────────────────────────────────────
+app.set('view engine', 'ejs')
+app.set('views', path.join(__dirname, 'views'))
 app.use(express.static(path.join(__dirname, 'public')))
-app.get('*path', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+
+app.get('/', (req, res) => {
+  res.render('index')
 })
 
 // ─── START SERVER ─────────────────────────────────────
