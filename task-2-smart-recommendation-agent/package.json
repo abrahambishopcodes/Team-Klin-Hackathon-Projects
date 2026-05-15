@@ -10,7 +10,8 @@
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
     "prisma:reset": "npx prisma migrate reset",
-    "download:data": "python3 scripts/downloadData.py"
+    "download:data": "python3 src/scripts/downloadData.py",
+    "upsert:data": "node src/scripts/upsertData.js"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +23,8 @@
     "@prisma/client": "^7.8.0",
     "express": "^5.2.1",
     "openai": "^6.37.0",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "voyageai": "^0.2.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
