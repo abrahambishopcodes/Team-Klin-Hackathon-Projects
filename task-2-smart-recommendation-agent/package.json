@@ -11,7 +11,7 @@
     "prisma:generate": "npx prisma generate",
     "prisma:reset": "npx prisma migrate reset",
     "download:data": "python3 src/scripts/downloadData.py",
-    "upsert:data": "node src/scripts/upsertData.js"
+    "upsert:data": "ts-node src/scripts/upsertData.ts"
   },
   "keywords": [],
   "author": "",
