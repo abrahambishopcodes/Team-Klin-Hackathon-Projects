@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
-    "prisma:reset": "npx prisma migrate reset"
+    "prisma:reset": "npx prisma migrate reset",
+    "download:data": "python3 scripts/downloadData.py"
   },
   "keywords": [],
   "author": "",
