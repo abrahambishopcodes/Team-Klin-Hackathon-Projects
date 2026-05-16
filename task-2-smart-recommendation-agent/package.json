@@ -10,6 +10,7 @@
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
     "prisma:reset": "npx prisma migrate reset",
+    "prisma:push": "npx prisma db push",
     "download:data": "python3 src/scripts/downloadData.py",
     "upsert:data": "ts-node src/scripts/upsertData.ts"
   },
