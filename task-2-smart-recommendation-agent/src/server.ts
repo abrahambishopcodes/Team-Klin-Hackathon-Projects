@@ -10,7 +10,6 @@ const PORT = getEnv("PORT");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 // routes
 app.use("/api", router);
 
