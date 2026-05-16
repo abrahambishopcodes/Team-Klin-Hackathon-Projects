@@ -13,6 +13,7 @@ router.get("/health", (req: Request, res: Response) => {
 router.post("/recommend", async (req: Request, res: Response) => {
     const {user_query} = req.body;
 
+    // embedded the user query
     const embeddingResponse = await voyage.embed({
         model: "voyage-4-lite",
         input: user_query,
@@ -25,6 +26,7 @@ router.post("/recommend", async (req: Request, res: Response) => {
         throw new Error("Failed to generate embedding")
     }
  
+    // used the vector to query the pinecone index
     const productsRecommendations = await index.searchRecords({
         query: {
             vector: { values: vector },
