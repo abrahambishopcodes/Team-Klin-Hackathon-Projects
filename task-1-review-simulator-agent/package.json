@@ -2,14 +2,15 @@
   "name": "task-1-review-simulator-agent",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev:server": "nodemon server.js",
-    "dev:client": "vite",
-    "build": "vite build --outDir public",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+    "dev": "node dev.mjs",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "unify": "npm -s run build && node dist/scripts/unify.js",
+    "vectorise": "npm -s run build && node dist/scripts/vectorise.js"
   },
   "keywords": [],
   "author": "",

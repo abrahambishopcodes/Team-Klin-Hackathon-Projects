@@ -461,13 +461,19 @@
     <label>Item Name</label>
     <input type="text" id="new-item" placeholder="e.g. Face Cream" />
 
+    <label>Item Description (optional)</label>
+    <textarea id="new-item-description" rows="2" placeholder="What was the product? (e.g. hydrating moisturizer, vitamin serum, etc.)"></textarea>
+
+    <label>Price (optional)</label>
+    <input type="text" id="new-item-price" placeholder="e.g. $25 or ₦5,000" />
+
     <label>Star Rating</label>
     <select id="new-stars" class="star-select">
-      <option value="5">⭐⭐⭐⭐⭐ 5</option>
-      <option value="4">⭐⭐⭐⭐ 4</option>
-      <option value="3">⭐⭐⭐ 3</option>
-      <option value="2">⭐⭐ 2</option>
-      <option value="1">⭐ 1</option>
+      <option value="5">★★★★★ 5</option>
+      <option value="4">★★★★ 4</option>
+      <option value="3">★★★ 3</option>
+      <option value="2">★★ 2</option>
+      <option value="1">★ 1</option>
     </select>
 
     <label>Review Text</label>
@@ -628,6 +634,8 @@
   // ── ADD REVIEW ──
   function addReview() {
     const item  = document.getElementById('new-item').value.trim()
+    const description = document.getElementById('new-item-description').value.trim()
+    const price = document.getElementById('new-item-price').value.trim()
     const stars = parseInt(document.getElementById('new-stars').value)
     const text  = document.getElementById('new-text').value.trim()
 
@@ -636,10 +644,12 @@
       return
     }
 
-    reviews.push({ item, stars, text })
+    reviews.push({ item, description, price, stars, text })
     renderReviews()
 
     document.getElementById('new-item').value = ''
+    document.getElementById('new-item-description').value = ''
+    document.getElementById('new-item-price').value = ''
     document.getElementById('new-text').value = ''
   }
 
@@ -653,8 +663,8 @@
     list.innerHTML = reviews.map((r, i) => `
       <div class="review-item">
         <div class="review-content">
-          <div class="stars">${'⭐'.repeat(r.stars)} <strong>${r.item}</strong></div>
-          <div style="color:var(--muted);margin-top:0.3rem">${r.text.slice(0, 80)}${r.text.length > 80 ? '...' : ''}</div>
+          <div class="stars">${'★'.repeat(r.stars)} <strong>${r.item}</strong> ${r.price ? `<span style="color:var(--muted2)">${r.price}</span>` : ''}</div>
+          <div style="color:var(--muted);margin-top:0.3rem;font-size:0.75rem">${r.description ? `${r.description} · ` : ''}${r.text.slice(0, 70)}${r.text.length > 70 ? '...' : ''}</div>
         </div>
         <button class="remove-btn" onclick="removeReview(${i})">✕</button>
       </div>
@@ -720,7 +730,7 @@
   function showOutput(data) {
     document.getElementById('out-rating').textContent = data.predicted_rating
     document.getElementById('out-stars').textContent =
-      '⭐'.repeat(Math.round(data.predicted_rating))
+      '★'.repeat(Math.round(data.predicted_rating))
     document.getElementById('out-review').textContent = data.simulated_review
 
     const conf = data.confidence_score
@@ -742,12 +752,36 @@
         <div class="r-value">${r.harshness}</div>
       </div>
       <div class="reasoning-item">
+        <div class="r-label">Writing Pace</div>
+        <div class="r-value">${r.writing_pace || '—'}</div>
+      </div>
+      <div class="reasoning-item">
         <div class="r-label">Style</div>
         <div class="r-value" style="font-size:0.75rem">${r.style_detected}</div>
       </div>
       <div class="reasoning-item">
         <div class="r-label">Avg Length</div>
         <div class="r-value">${r.avg_review_length} chars</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Vocabulary</div>
+        <div class="r-value">${r.vocabulary_richness || '—'} words</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Nigerian Score</div>
+        <div class="r-value">${r.nigerian_score || 0}/100</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Mentions Price</div>
+        <div class="r-value">${r.mentions_price ? 'Yes' : 'No'}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Advice Giver</div>
+        <div class="r-value">${r.gives_advice ? 'Yes' : 'No'}</div>
+      </div>
+      <div class="reasoning-item">
+        <div class="r-label">Rating Style</div>
+        <div class="r-value">${r.rating_consistency || '—'}</div>
       </div>
     `
 
