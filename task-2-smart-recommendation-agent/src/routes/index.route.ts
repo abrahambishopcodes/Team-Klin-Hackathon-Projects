@@ -53,17 +53,31 @@ router.post("/recommend", async (req: Request, res: Response) => {
             topK: 25,
         },
         namespace: "task2_items",
-        // rerank: {
-        //     model: "rerank-v2-light",
-        //     query: generatedQuery,
-        //     topN: 10,
-        //     rankFields: ["name", "description"]
-        // }
+    })
+
+    // Extract documents from search results for reranking
+    const documents = (productsRecommendations.result?.hits || [])?.map((hit: any) => {
+        const fields = hit.fields as any;
+        if (!fields) return "";
+        
+        const title = fields.title || "";
+        const description = Array.isArray(fields.description) ? fields.description.join(" ") : (fields.description || "");
+        const features = Array.isArray(fields.features) ? fields.features.join(" ") : (fields.features || "");
+        
+        return `${title}. ${description} ${features}`.trim();
+    }).filter((doc: string) => doc !== "");
+
+    // rerank the results
+    const reRankedResults = await voyage.rerank({
+        query: generatedQuery,
+        documents: documents,
+        model: "rerank-2.5-lite",
+        topK: 15,
     })
 
     sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
         generatedQuery,
-        recommendations: productsRecommendations,
+        recommendations: reRankedResults,
         user
     });
 
