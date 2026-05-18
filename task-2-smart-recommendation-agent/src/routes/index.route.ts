@@ -11,88 +11,101 @@ const router = Router();
 
 // health check
 router.get("/health", (req: Request, res: Response) => {
-    sendSuccessResponse(res, 200, "OK", null);
+  sendSuccessResponse(res, 200, "OK", null);
 });
 
 router.post("/recommend", async (req: Request, res: Response) => {
-    const {user_query, user_id} = req.body;
+  const { user_query, user_id } = req.body;
 
-    // Fetch user from database
-    const user = await prisma.user.findUnique({
-        where: {
-            user_id
-        }
+  // Fetch user from database
+  const user = await prisma.user.findUnique({
+    where: {
+      user_id,
+    },
+  });
+
+  if (user_id && !user) {
+    throw new Error("User not found");
+  }
+
+  // use the llm to generate a query based on the user's query and their profile
+  const generatedQuery = await generateQuery(
+    user?.persona_summary as string,
+    user_query,
+  );
+
+  if (!generatedQuery) {
+    throw new Error("Failed to generate query");
+  }
+
+  // embedded the user query
+  const embeddingResponse = await voyage.embed({
+    model: "voyage-4-lite",
+    input: generatedQuery,
+    inputType: "query",
+  });
+
+  const vector = embeddingResponse?.data?.[0]?.embedding;
+
+  if (!vector) {
+    throw new Error("Failed to generate embedding");
+  }
+
+  // used the vector to query the pinecone index and rerank the results
+  const productsRecommendations = await index.searchRecords({
+    query: {
+      vector: { values: vector },
+      topK: 25,
+    },
+    namespace: "task2_items",
+  });
+
+  // Extract documents from search results for reranking
+  const documents = (productsRecommendations.result?.hits || [])
+    ?.map((hit: any) => {
+      const fields = hit.fields as any;
+      if (!fields) return "";
+
+      const title = fields.title || "";
+      const description = Array.isArray(fields.description)
+        ? fields.description.join(" ")
+        : fields.description || "";
+      const features = Array.isArray(fields.features)
+        ? fields.features.join(" ")
+        : fields.features || "";
+
+      return `${title}. ${description} ${features}`.trim();
     })
+    .filter((doc: string) => doc !== "");
 
-    if (user_id && !user) {
-        throw new Error("User not found")
-    }
+  // rerank the results
+  const reRankedResults = await voyage.rerank({
+    query: generatedQuery,
+    documents: documents,
+    model: "rerank-2.5-lite",
+    topK: 15,
+  });
 
-    // use the llm to generate a query based on the user's query and their profile
-    const generatedQuery = await generateQuery(user?.persona_summary as string, user_query)
+  // get the original documents from the ranked results index
+  const finalResults = reRankedResults.data?.map(
+    (result: RerankResponseDataItem) => {
+      const originalIndex = result.index as number;
+      const originalDocument =
+        productsRecommendations.result?.hits?.[originalIndex];
 
-    if (!generatedQuery) {
-        throw new Error("Failed to generate query")
-    }
+      return {
+        confidenceScore: result.relevanceScore,
+        product: originalDocument?.fields,
+      };
+    },
+  );
 
-    // embedded the user query
-    const embeddingResponse = await voyage.embed({
-        model: "voyage-4-lite",
-        input: generatedQuery,
-        inputType: "query"
-    });
+  // TODO: Make the LLM actually reason before recommending a product
 
-    const vector = embeddingResponse?.data?.[0]?.embedding;
-
-    if (!vector) {
-        throw new Error("Failed to generate embedding")
-    }
- 
-    // used the vector to query the pinecone index and rerank the results
-    const productsRecommendations = await index.searchRecords({
-        query: {
-            vector: { values: vector },
-            topK: 25,
-        },
-        namespace: "task2_items",
-    })
-
-    // Extract documents from search results for reranking
-    const documents = (productsRecommendations.result?.hits || [])?.map((hit: any) => {
-        const fields = hit.fields as any;
-        if (!fields) return "";
-        
-        const title = fields.title || "";
-        const description = Array.isArray(fields.description) ? fields.description.join(" ") : (fields.description || "");
-        const features = Array.isArray(fields.features) ? fields.features.join(" ") : (fields.features || "");
-        
-        return `${title}. ${description} ${features}`.trim();
-    }).filter((doc: string) => doc !== "");
-
-    // rerank the results
-    const reRankedResults = await voyage.rerank({
-        query: generatedQuery,
-        documents: documents,
-        model: "rerank-2.5-lite",
-        topK: 15,
-    })
-
-    // get the original documents from the ranked results index
-    const finalResults = reRankedResults.data?.map((result: RerankResponseDataItem) => {
-        const originalIndex = result.index as number;
-        const originalDocument = productsRecommendations.result?.hits?.[originalIndex];
-
-        return {
-            confidenceScore: result.relevanceScore,
-            product: originalDocument?.fields
-        }
-        
-    })
-
-    sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
-       results: finalResults
-    });
-
-})
+  sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
+    generatedQuery,
+    results: finalResults,
+  });
+});
 
 export default router;
