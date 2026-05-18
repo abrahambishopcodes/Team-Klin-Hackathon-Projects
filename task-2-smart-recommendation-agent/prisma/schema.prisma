@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -13,7 +13,7 @@ model user {
   rating_count           Int
   avg_rating             Float
   avg_rating_text_length Float
-  persona_summary        String
+  persona_summary        Json
 }
 
 model review {
