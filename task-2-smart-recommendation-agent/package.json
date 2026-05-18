@@ -12,7 +12,8 @@
     "prisma:reset": "npx prisma migrate reset",
     "prisma:push": "npx prisma db push",
     "download:data": "python3 src/scripts/downloadData.py",
-    "upsert:data": "ts-node src/scripts/upsertData.ts"
+    "upsert:data": "ts-node src/scripts/upsertData.ts",
+    "process:users": "ts-node src/scripts/processUsers.ts"
   },
   "keywords": [],
   "author": "",
