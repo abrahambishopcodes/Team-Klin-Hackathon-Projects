@@ -5,6 +5,8 @@ import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
 import { generateQuery } from "../utils/aiHelpers";
 
+import { RerankResponseDataItem } from "voyageai";
+
 const router = Router();
 
 // health check
@@ -75,10 +77,20 @@ router.post("/recommend", async (req: Request, res: Response) => {
         topK: 15,
     })
 
+    // get the original documents from the ranked results index
+    const finalResults = reRankedResults.data?.map((result: RerankResponseDataItem) => {
+        const originalIndex = result.index as number;
+        const originalDocument = productsRecommendations.result?.hits?.[originalIndex];
+
+        return {
+            confidenceScore: result.relevanceScore,
+            product: originalDocument?.fields
+        }
+        
+    })
+
     sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
-        generatedQuery,
-        recommendations: reRankedResults,
-        user
+       results: finalResults
     });
 
 })
