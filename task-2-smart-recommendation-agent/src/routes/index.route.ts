@@ -3,8 +3,6 @@ import { index } from "../config/pinecone.config";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
 import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
-import openaiClient from "../config/openai.config";
-import getEnv from "../utils/env";
 import { generateQuery } from "../utils/aiHelpers";
 
 const router = Router();
@@ -48,13 +46,19 @@ router.post("/recommend", async (req: Request, res: Response) => {
         throw new Error("Failed to generate embedding")
     }
  
-    // used the vector to query the pinecone index
+    // used the vector to query the pinecone index and rerank the results
     const productsRecommendations = await index.searchRecords({
         query: {
             vector: { values: vector },
-            topK: 10,
+            topK: 25,
         },
-        namespace: "task2_items"
+        namespace: "task2_items",
+        // rerank: {
+        //     model: "rerank-v2-light",
+        //     query: generatedQuery,
+        //     topN: 10,
+        //     rankFields: ["name", "description"]
+        // }
     })
 
     sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
