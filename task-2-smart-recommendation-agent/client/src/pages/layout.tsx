@@ -6,9 +6,15 @@ const Layout = () => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main>
-        <Outlet />
-      </main>
+      {/* Main content */}
+      <div className="w-full flex flex-col flex-1 min-w-0 overflow-x-hidden">
+          <header className="h-12">
+            Header
+          </header>
+          <main className="p-4 w-full h-full">
+            <Outlet />
+          </main>
+        </div>
     </SidebarProvider>
   )
 }
