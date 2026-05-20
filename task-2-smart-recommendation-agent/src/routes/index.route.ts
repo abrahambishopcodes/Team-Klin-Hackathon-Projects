@@ -3,11 +3,26 @@ import { index } from "../config/pinecone.config";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
 import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
-import { aiRecommendProducts, generateQuery } from "../utils/aiHelpers";
+import { aiRecommendProducts, generateQuery, RerankedProduct, UserPersona } from "../utils/aiHelpers";
 
 import { RerankResponseDataItem } from "voyageai";
 
 const router = Router();
+
+interface ProductFields {
+  title?: string;
+  description?: string | string[];
+  features?: string | string[];
+  parent_asin?: string;
+  main_category?: string;
+  price?: string;
+  average_rating?: number;
+  rating_number?: number;
+}
+
+interface SearchHit {
+  fields: ProductFields;
+}
 
 // health check
 router.get("/health", (req: Request, res: Response) => {
@@ -29,10 +44,15 @@ router.post("/recommend", async (req: Request, res: Response) => {
     throw new Error("User not found");
   }
 
+  const persona = user?.persona_summary as unknown as UserPersona;
+
+  if (!persona) {
+    throw new Error("User persona not found");
+  }
 
   // use the llm to generate a query based on the user's query and their profile
   const generatedQuery = await generateQuery(
-    user?.persona_summary as string,
+    persona,
     user_query,
   );
 
@@ -63,9 +83,9 @@ router.post("/recommend", async (req: Request, res: Response) => {
   });
 
   // We reconstruct the document fields to be used for reranking
-  const documents = (productsRecommendations.result?.hits || [])
-    ?.map((hit: any) => {
-      const fields = hit.fields as any;
+  const documents = ((productsRecommendations.result?.hits as unknown as SearchHit[]) || [])
+    ?.map((hit) => {
+      const fields = hit.fields;
       if (!fields) return "";
 
       const title = fields.title || "";
@@ -93,7 +113,7 @@ router.post("/recommend", async (req: Request, res: Response) => {
     (result: RerankResponseDataItem) => {
       const originalIndex = result.index as number;
       const originalDocument =
-        productsRecommendations.result?.hits?.[originalIndex];
+        (productsRecommendations.result?.hits as unknown as SearchHit[])?.[originalIndex];
 
       return {
         confidenceScore: result.relevanceScore,
@@ -104,9 +124,9 @@ router.post("/recommend", async (req: Request, res: Response) => {
 
   // use the llm to recommend final products from the reranked results and reason on why it is recommending the product
   const aiProductRecommendationResponse = await aiRecommendProducts(
-    user?.persona_summary as object,
+    persona,
     user_query,
-    reRankedProducts as any,
+    reRankedProducts as RerankedProduct[],
   )
 
   sendSuccessResponse(res, 200, "Recommendations fetched successfully", {

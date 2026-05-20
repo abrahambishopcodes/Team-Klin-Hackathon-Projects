@@ -1,7 +1,25 @@
 import groq from "../config/groq.config";
 
+export interface UserPersona {
+  quality_bar: string;
+  brand_signals: string[];
+  taste_summary: string;
+  purchase_drivers: string[];
+  recent_purchases: string[];
+  price_sensitivity: string;
+  preferred_categories: string[];
+  price_range_estimate: string;
+  review_tone_patterns: string;
+  typical_dealbreakers: string[];
+}
+
+export interface RerankedProduct {
+  confidenceScore: number;
+  product: any;
+}
+
 export const generateQuery = async (
-  user_persona: string,
+  user_persona: UserPersona,
   userQuery: string,
 ) => {
   const queryResponse = await groq.chat.completions.create({
@@ -27,27 +45,42 @@ export const generateQuery = async (
 // * LLM to recommend final products from the reranked results and reason on why it is recommending the product
 
 export const aiRecommendProducts = async (
-  user_persona: object,
+  user_persona: UserPersona,
   userQuery: string,
-  rerankedResults: any[],
+  rerankedResults: RerankedProduct[],
 ) => {
 
+  // compress the user persona to fit the llm context window
+  const compressUserPersona = (persona: UserPersona): string => {
+    return Object.entries(persona)
+      .map(([key, value]) => {
+        const formattedKey = key
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+        const formattedValue = Array.isArray(value) ? value.join(", ") : value;
+        return `${formattedKey}: ${formattedValue}`;
+      })
+      .join("\n");
+  };
+
+  const formattedPersona = compressUserPersona(user_persona);
+
   // transform and compress the reranked results to fit the llm context window
-  const products = rerankedResults.map((result: any) => {
+  const products = rerankedResults.map((result: RerankedProduct) => {
     const product = result.product;
 
     return {
-  asin: product.parent_asin,
-  title: product.title?.substring(0, 80),
-  category: product.main_category,
-  price: product.price === "None" ? null : product.price,
-  rating: product.average_rating,
-  rating_count: product.rating_number,
-  summary: product.description?.[1]?.substring(0, 150) ?? "",
-  key_features: product.features
-    ?.slice(0, 2)
-    .map((f: string) => f.substring(0, 100)) ?? [],
-}
+      asin: product.parent_asin,
+      title: product.title?.substring(0, 80),
+      category: product.main_category,
+      price: product.price === "None" ? null : product.price,
+      rating: product.average_rating,
+      rating_count: product.rating_number,
+      summary: product.description?.[1]?.substring(0, 150) ?? "",
+      key_features: product.features
+        ?.slice(0, 2)
+        .map((f: string) => f.substring(0, 100)) ?? [],
+    };
   });
 
   const recommendedProducts = await groq.chat.completions.create({
@@ -97,7 +130,7 @@ export const aiRecommendProducts = async (
         role: "user",
         content: `
         === USER PERSONA ===
-        ${user_persona}
+        ${formattedPersona}
 
         === USER QUERY ===
         ${userQuery}
