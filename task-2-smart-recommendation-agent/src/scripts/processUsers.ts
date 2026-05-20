@@ -5,7 +5,6 @@ import path from "path";
 import readline from "readline";
 import prisma from "../lib/prisma.lib";
 import groq from "../config/groq.config";
-import getEnv from "../utils/env";
 
 const DATA_DIR = path.join(__dirname, "../../data/raw");
 const REVIEWS_FILES = [
@@ -50,10 +49,10 @@ async function processUsers() {
   }
 
   const qualifiedUsers = Array.from(userReviewsMap.entries()).filter(
-    ([_, reviews]) => reviews.length >= 8 && reviews.length <= 12,
+    ([_, reviews]) => reviews.length >= 10 && reviews.length <= 15,
   );
 
-  console.log(`Found ${qualifiedUsers.length} qualified users (8-12 reviews).`);
+  console.log(`Found ${qualifiedUsers.length} qualified users (10-15 reviews).`);
 
   //  process 6 users
   const usersToProcess = qualifiedUsers.slice(0, 6);
@@ -128,6 +127,10 @@ The JSON should include:
 - typical_dealbreakers: string[]
 - purchase_drivers: string[]
 - taste_summary: string (2 to 3 sentence summary of the user's taste)
+- price_range_estimate: string (look at prices of items they've reviewed 
+  and rated 4+ stars. Give a concrete dollar range. Add the currency symbol.)
+- recent_purchases: string[] (list the last 3-5 items they reviewed 
+  by timestamp, most recent first.)
 
 User Reviews:
 ${reviewsContent}
@@ -137,7 +140,7 @@ Return ONLY the JSON object.
 
   try {
     const response = await groq.chat.completions.create({
-      model: getEnv("AI_BASE_MODEL"),
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
