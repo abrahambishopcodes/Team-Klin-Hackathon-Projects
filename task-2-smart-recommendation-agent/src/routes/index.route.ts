@@ -141,7 +141,11 @@ router.post("/recommend", async (req: Request, res: Response) => {
   })
 
   sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
-    products: finalResults,
+    interpretedQuery: generatedQuery,
+    products: {
+      ...finalResults,
+      reasoning_summary: recommendedProducts.reasoning_summary,
+    },
     tokenUsage: aiProductRecommendationResponse.usage,
   });
 });

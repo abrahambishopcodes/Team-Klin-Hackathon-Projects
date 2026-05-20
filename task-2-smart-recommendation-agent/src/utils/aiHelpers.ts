@@ -119,8 +119,12 @@ export const aiRecommendProducts = async (
                 required: ["asin", "confidence_score", "reasoning"],
               },
             },
+            reasoning_summary: {
+              type: "string",
+              description: "short reasoning for the recommendation."
+            }
           },
-          required: ["products_asins"],
+          required: ["products_asins", "reasoning_summary"],
         }
       }
     },
