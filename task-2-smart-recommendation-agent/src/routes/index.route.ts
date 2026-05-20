@@ -3,7 +3,7 @@ import { index } from "../config/pinecone.config";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
 import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
-import { generateQuery } from "../utils/aiHelpers";
+import { aiRecommendProducts, generateQuery } from "../utils/aiHelpers";
 
 import { RerankResponseDataItem } from "voyageai";
 
@@ -80,16 +80,16 @@ router.post("/recommend", async (req: Request, res: Response) => {
     })
     .filter((doc: string) => doc !== "");
 
-  // rerank the results
+  // rerank the documents results
   const reRankedResults = await voyage.rerank({
     query: generatedQuery,
     documents: documents,
     model: "rerank-2.5-lite",
-    topK: 15,
+    topK: 10,
   });
 
   // get the original documents from the ranked results index
-  const finalResults = reRankedResults.data?.map(
+  const reRankedProducts = reRankedResults.data?.map(
     (result: RerankResponseDataItem) => {
       const originalIndex = result.index as number;
       const originalDocument =
@@ -102,11 +102,16 @@ router.post("/recommend", async (req: Request, res: Response) => {
     },
   );
 
-  // TODO: Make the LLM actually reason before recommending a product
+  // use the llm to recommend final products from the reranked results and reason on why it is recommending the product
+  const aiProductRecommendationResponse = await aiRecommendProducts(
+    user?.persona_summary as object,
+    user_query,
+    reRankedProducts as any,
+  )
 
   sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
     generatedQuery,
-    results: finalResults,
+    results: aiProductRecommendationResponse,
   });
 });
 

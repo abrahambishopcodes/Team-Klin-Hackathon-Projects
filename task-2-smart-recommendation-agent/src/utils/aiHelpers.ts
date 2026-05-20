@@ -27,26 +27,75 @@ export const generateQuery = async (
 // * LLM to recommend final products from the reranked results and reason on why it is recommending the product
 
 export const aiRecommendProducts = async (
-  user_persona: string,
+  user_persona: object,
   userQuery: string,
   rerankedResults: any[],
 ) => {
 
-  const products = rerankedResults.map((result: any) => result.product);
+  // transform and compress the reranked results to fit the llm context window
+  const products = rerankedResults.map((result: any) => {
+    const product = result.product;
+
+    return {
+  asin: product.parent_asin,
+  title: product.title?.substring(0, 80),
+  category: product.main_category,
+  price: product.price === "None" ? null : product.price,
+  rating: product.average_rating,
+  rating_count: product.rating_number,
+  summary: product.description?.[1]?.substring(0, 150) ?? "",
+  key_features: product.features
+    ?.slice(0, 2)
+    .map((f: string) => f.substring(0, 100)) ?? [],
+}
+  });
 
   const recommendedProducts = await groq.chat.completions.create({
     model: "openai/gpt-oss-120b",
     include_reasoning: true,
-    max_completion_tokens: 5000,
+    max_completion_tokens: 2000,
     reasoning_effort: "medium",
+    temperature: 0.6,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "recommendations",
+        schema: {
+          type: "object",
+          properties: {
+            products_asins: {
+              type: "array",
+              description: "List of product ASINs to be recommended",
+              items: {
+                type: "object",
+                properties: {
+                  asin: {
+                    type: "string",
+                  },
+                  confidence_score: {
+                    type: "number",
+                  },
+                },
+                required: ["asin", "confidence_score"],
+              },
+            },
+          },
+          required: ["products_asins"],
+        }
+      }
+    },
     messages: [
+      {
+        role: "system",
+        content: `You are a product recommendation agent. Before making any recommendation, 
+        you must reason carefully through the following steps in order.
+        Do not skip any step. Do not rush to conclusions. Reference actual profile signals
+        in every decision.
+`
+      },
       {
         role: "user",
         content: `
-        You are a product recommendation agent. Before making any recommendation, 
-        you must reason carefully through the following steps in order.
-        Do not skip any step. Do not rush to conclusions.
-
         === USER PERSONA ===
         ${user_persona}
 
@@ -57,12 +106,10 @@ export const aiRecommendProducts = async (
         ${JSON.stringify(products)}
 
         === HOW TO REASON ===
-        STEP 1 — DECODE THE USER
+        STEP 1 — DECODE AND UNDERSTAND THE USER
 Look at their profile. Ask yourself:
-- What do they consistently reward with 4-5 stars?
-- What do they consistently punish with 1-2 stars?
-- What words appear repeatedly in their positive reviews?
-- What is their actual price ceiling based on past purchases?
+- what are they looking for and what do they punish?
+- What is their actual price ceiling?
 - Do they have any cross-category interests outside their primary domain?
 Write your analysis before moving on.
 
@@ -70,16 +117,12 @@ Write your analysis before moving on.
 STEP 2 — INTERPRET THE QUERY WITH CONTEXT
 Do not take the query literally. Ask yourself:
 - Given this specific user's profile, what do they ACTUALLY mean?
-- A budget health buyer asking for a "watch" means something different 
-  from a premium electronics buyer asking for the same thing.
-- What is the underlying need behind this query?
-Write your interpretation before moving on.
 
 STEP 3 — SCORE EACH CANDIDATE
 For every candidate evaluate:
 - Relevance to the interpreted query (not the literal query)
 - Alignment with price sensitivity from their history
-- Match to their quality signals (what they've rewarded before)
+- Match to their quality signals
 - Cross-domain value (does it expand their interests in a relevant way?)
 - Risk factors (what about this product might they dislike based on history?)
 Give each candidate a score from 1-10 with specific justification.
@@ -100,8 +143,13 @@ Good reason: "You rated 3 health monitors 4+ stars and mentioned
               battery life in all positive reviews. This device has 
               a 14-day battery and is your price range."
 
-        `,
+        `.trim(),
       },
     ],
   });
+
+  return {
+    usage: recommendedProducts.usage,
+    response: recommendedProducts?.choices?.[0]?.message
+  };
 };
