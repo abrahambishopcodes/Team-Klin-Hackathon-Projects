@@ -3,8 +3,8 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import readline from "readline";
-import { prisma } from "../lib/prisma.lib";
-import openaiClient from "../config/openai.config";
+import prisma from "../lib/prisma.lib";
+import groq from "../config/groq.config";
 import getEnv from "../utils/env";
 
 const DATA_DIR = path.join(__dirname, "../../data/raw");
@@ -136,7 +136,7 @@ Return ONLY the JSON object.
 `;
 
   try {
-    const response = await openaiClient.chat.completions.create({
+    const response = await groq.chat.completions.create({
       model: getEnv("AI_BASE_MODEL"),
       messages: [
         {

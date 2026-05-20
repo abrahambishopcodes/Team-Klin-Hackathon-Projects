@@ -1,23 +1,17 @@
-import openaiClient from "../config/openai.config";
-import getEnv from "./env";
-
-const model = getEnv("AI_BASE_MODEL");
+import groq from "../config/groq.config";
 
 export const generateQuery = async (
   user_persona: string,
   userQuery: string,
 ) => {
-  const queryResponse = await openaiClient.chat.completions.create({
-    model,
+  const queryResponse = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
     messages: [
       {
-        role: "system",
-        content:
-          "You are an expert in generating queries for a vector database to retrieve relevant information. return just the query alone, do not add any extra texts or formattings.",
-      },
-      {
         role: "user",
-        content: `You are to generate a query in natural language based on the user's original query and their profile.
+        content: `
+        You are an expert in generating queries for a vector database to retrieve relevant information. return just the query alone, do not add any extra texts or formatings.
+        You are to generate a query in natural language based on the user's original query and their profile.
                 
                 User query: ${userQuery}
                 User profile: ${JSON.stringify(user_persona)}
@@ -27,5 +21,5 @@ export const generateQuery = async (
     ],
   });
 
-  return queryResponse?.choices?.[0]?.message?.content || "";
+  return queryResponse?.choices?.[0]?.message?.content;
 };

@@ -15,6 +15,7 @@ router.get("/health", (req: Request, res: Response) => {
 });
 
 router.post("/recommend", async (req: Request, res: Response) => {
+
   const { user_query, user_id } = req.body;
 
   // Fetch user from database
@@ -27,6 +28,7 @@ router.post("/recommend", async (req: Request, res: Response) => {
   if (user_id && !user) {
     throw new Error("User not found");
   }
+
 
   // use the llm to generate a query based on the user's query and their profile
   const generatedQuery = await generateQuery(
@@ -60,7 +62,7 @@ router.post("/recommend", async (req: Request, res: Response) => {
     namespace: "task2_items",
   });
 
-  // Extract documents from search results for reranking
+  // We reconstruct the document fields to be used for reranking
   const documents = (productsRecommendations.result?.hits || [])
     ?.map((hit: any) => {
       const fields = hit.fields as any;
