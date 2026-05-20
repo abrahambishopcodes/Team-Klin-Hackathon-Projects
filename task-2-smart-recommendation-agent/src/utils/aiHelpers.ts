@@ -18,6 +18,8 @@ export interface RerankedProduct {
   product: any;
 }
 
+//  * use the llm to generate a query based on the user's query and their profile
+
 export const generateQuery = async (
   user_persona: UserPersona,
   userQuery: string,
@@ -26,15 +28,18 @@ export const generateQuery = async (
     model: "llama-3.3-70b-versatile",
     messages: [
       {
-        role: "user",
+        role: "system",
         content: `
         You are an expert in generating queries for a vector database to retrieve relevant information. return just the query alone, do not add any extra texts or formatings.
-        You are to generate a query in natural language based on the user's original query and their profile.
-                
-                User query: ${userQuery}
-                User profile: ${JSON.stringify(user_persona)}
-                
-                Generate a query that will help retrieve relevant information from the vector database.`,
+        You are to generate a query in natural language based on the user's original query and their profile.`
+      },
+      {
+        role: "user",
+        content: `
+        User query: ${userQuery}
+        User profile: ${JSON.stringify(user_persona)}
+        
+        Generate a query that will help retrieve relevant information from the vector database.`,
       },
     ],
   });
@@ -85,9 +90,7 @@ export const aiRecommendProducts = async (
 
   const recommendedProducts = await groq.chat.completions.create({
     model: "openai/gpt-oss-120b",
-    include_reasoning: true,
     max_completion_tokens: 2000,
-    reasoning_effort: "medium",
     temperature: 0.6,
     response_format: {
       type: "json_schema",
@@ -108,8 +111,12 @@ export const aiRecommendProducts = async (
                   confidence_score: {
                     type: "number",
                   },
+                  reasoning: {
+                    type: "string",
+                    description: "short reasoning for the recommendation."
+                  }
                 },
-                required: ["asin", "confidence_score"],
+                required: ["asin", "confidence_score", "reasoning"],
               },
             },
           },
@@ -120,11 +127,10 @@ export const aiRecommendProducts = async (
     messages: [
       {
         role: "system",
-        content: `You are a product recommendation agent. Before making any recommendation, 
+        content: `You are a product recommendation agent who deeply understands the user's needs and preferences. Before making any recommendation, 
         you must reason carefully through the following steps in order.
         Do not skip any step. Do not rush to conclusions. Reference actual profile signals
-        in every decision.
-`
+        in every decision. Respond like you understand and is talking directly to the user using pronouns like 'you'.`
       },
       {
         role: "user",
@@ -175,6 +181,8 @@ Bad reason: "This matches your interests"
 Good reason: "You rated 3 health monitors 4+ stars and mentioned 
               battery life in all positive reviews. This device has 
               a 14-day battery and is your price range."
+
+              RECOMMEND JUST 5 TO 8 PRODUCTS THAT BEST FITS THE USER'S NEEDS AND PREFERENCES
 
         `.trim(),
       },

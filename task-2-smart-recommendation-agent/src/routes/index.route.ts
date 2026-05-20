@@ -127,11 +127,22 @@ router.post("/recommend", async (req: Request, res: Response) => {
     persona,
     user_query,
     reRankedProducts as RerankedProduct[],
-  )
+  );
+
+  const recommendedProducts = JSON.parse(aiProductRecommendationResponse.response?.content as string)
+
+  // return the products with the reasoning from the llm
+  const finalResults = recommendedProducts.products_asins.map((r: any) => {
+    const product = reRankedProducts?.find((p) => p?.product?.parent_asin === r.asin);
+    return {
+      ...product,
+      reasoning: r.reasoning,
+    }
+  })
 
   sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
-    generatedQuery,
-    results: aiProductRecommendationResponse,
+    products: finalResults,
+    tokenUsage: aiProductRecommendationResponse.usage,
   });
 });
 
