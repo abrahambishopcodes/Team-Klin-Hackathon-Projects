@@ -144,7 +144,7 @@ router.post("/recommend", async (req: Request, res: Response) => {
     interpretedQuery: generatedQuery,
     products: {
       ...finalResults,
-      reasoning_summary: recommendedProducts.reasoning_summary,
+      main_reasoning: recommendedProducts.main_reasoning,
     },
     tokenUsage: aiProductRecommendationResponse.usage,
   });
