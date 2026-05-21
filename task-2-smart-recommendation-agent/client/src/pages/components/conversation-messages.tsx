@@ -15,6 +15,8 @@ import {
   ReasoningTrigger,
 } from "@/components/ui/reasoning"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
+
 export interface MessageType {
   key: string
   value: AiRecommendproductResponse["data"] | string,
@@ -30,7 +32,8 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
 
 
   return (
-    <Conversation className="relative size-full">
+    <Conversation className="relative size-full max-w-5xl">
+      <ScrollArea className="h-full">
       <ConversationContent>
           {messages.map(({ key, value, name, sender }) => (
             <Message from={sender} key={key}>
@@ -40,8 +43,8 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
                 // AI response
                 (<div>
                   <Reasoning isStreaming={false} duration={Number(value.tokenUsage.completion_time.toFixed(2))}>
-                    <ReasoningTrigger />
-                    <ReasoningContent>{value.main_reasoning}</ReasoningContent>
+                    <ReasoningTrigger className="text-yellow-300 hover:text-yellow-400" />
+                    <ReasoningContent className="text-gray-300 font-mono">{value.main_reasoning}</ReasoningContent>
                   </Reasoning>
 
                   {/* products card and reasoning */}
@@ -62,6 +65,7 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
           ))}
       </ConversationContent>
       <ConversationScrollButton />
+    </ScrollArea>
     </Conversation>
   )
 }
