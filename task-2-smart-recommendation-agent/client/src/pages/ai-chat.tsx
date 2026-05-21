@@ -5,7 +5,9 @@ import {
   InputGroupAddon,
 } from "@/components/ui/input-group";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Info } from "lucide-react";
+import { Info, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
 
 const starterPrompts = [
   "I need a power bank that can charge my laptop on the go",
@@ -31,7 +33,7 @@ const AiChatPage = () => {
         <Suggestions className="flex flex-wrap w-[80%] mx-auto justify-center gap-y-4">
           {starterPrompts.map((prompt, index) => (
             <Suggestion
-              className="p-4"
+              className="p-4 text-sm"
               key={index}
               suggestion={prompt}
               onClick={() => {}}
@@ -54,15 +56,34 @@ const AiChatPage = () => {
 matters to me, I recently started home fitness..."
             />
             <InputGroupAddon align="block-end">
+              <Button className="font-bold">Save</Button>
               <p className="ml-auto text-foreground/50">0 / 500</p>
             </InputGroupAddon>
           </InputGroup>
           <FieldDescription className="text-foreground/50 flex items-center gap-2">
-          <Info className="size-4" />
-            No history needed. Just tell us about your preferences, lifestyle, or
-            what you're looking for.
+            <Info className="size-4" />
+            No history needed. Just tell us about your preferences, lifestyle,
+            or what you're looking for.
           </FieldDescription>
         </Field>
+      </div>
+
+      {/* prompt input */}
+      <div className="max-w-5xl w-full flex items-center  mt-auto">
+        <InputGroup className="bg-[#291D16] border-border p-2 flex items-center">
+          <InputGroupAddon align="inline-start">
+            <MessageSquare className="size-5 text-foreground" />
+          </InputGroupAddon>
+          <InputGroupTextarea
+            className="placeholder:text-foreground/50 placeholder:text-sm ml-4"
+            placeholder="Ask Reco something to find ..."
+          />
+          <InputGroupAddon align="inline-end">
+            <Button>
+              <Send className="size-5" />
+            </Button>
+          </InputGroupAddon>
+        </InputGroup>
       </div>
     </section>
   );

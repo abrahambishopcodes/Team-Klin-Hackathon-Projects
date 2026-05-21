@@ -12,9 +12,11 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@tailwindcss/vite": "^4.3.0",
+    "ai": "^6.0.188",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
+    "nanoid": "^5.1.11",
     "radix-ui": "^1.4.3",
     "react": "^19.2.6",
     "react-aria-components": "^1.17.0",
