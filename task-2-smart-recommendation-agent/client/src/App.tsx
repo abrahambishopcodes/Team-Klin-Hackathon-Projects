@@ -1,6 +1,7 @@
 import {createBrowserRouter, createRoutesFromElements, Route, RouterProvider} from "react-router-dom"
 import Layout from "./pages/layout"
 import AiChatPage from "./pages/ai-chat"
+import {Toaster} from 'react-hot-toast'
 
 
 const router = createBrowserRouter(
@@ -13,7 +14,10 @@ const router = createBrowserRouter(
 
 const App = () => {
   return (
+    <>
     <RouterProvider router={router} />
+    <Toaster position="top-center" />
+    </>
   )
 }
 

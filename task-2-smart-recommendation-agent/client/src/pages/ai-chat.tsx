@@ -11,6 +11,10 @@ import { MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { ConversationMessages } from "./components/conversation-messages";
 
+import toast from "react-hot-toast";
+
+import { generateColdStartUserProfile } from "@/api/ai-chat";
+
 const starterPrompts = [
   "I need a power bank that can charge my laptop on the go",
   "I want to start a home gym with minimal equipment",
@@ -32,9 +36,29 @@ const AiChatPage = () => {
   const [messages, setMessages] = useState([]);
 
   // function to save user profile to local storage
-  const handleSaveUserProfile = () => {
-    localStorage.setItem(userProfileKey, userProfileText);
-    setUserProfile(userProfileText);
+  const handleSaveUserProfile = async () => {
+    // If there is no use profile text
+    if (!userProfileText) {
+      toast("You need to tell us a little about yourself first")
+      return;
+    }
+
+    // Generate user profile
+   const coldStartUserProfile = await toast.promise(
+      generateColdStartUserProfile(userProfileText),
+      {
+        loading: "Generating user profile...",
+        success: "User profile generated successfully",
+        error: "Failed to generate user profile",
+      }
+    )
+
+    // If user profile is generated successfully
+    if (coldStartUserProfile.success) {
+      localStorage.setItem(userProfileKey, JSON.stringify(coldStartUserProfile.data));
+      setUserProfile(coldStartUserProfile.data);
+    }
+
   };
 
   return (
