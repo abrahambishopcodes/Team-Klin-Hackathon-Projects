@@ -68,7 +68,7 @@ const AiChatPage = () => {
       }
 
       {/* prompt input */}
-      <div className="max-w-5xl w-full flex items-center  mt-auto">
+      <div className="max-w-5xl w-full flex items-center  mt-auto mb-8">
         <InputGroup className="bg-muted border-border p-2 flex items-center">
           <InputGroupAddon align="inline-start">
             <MessageSquare className="size-5 text-foreground" />
