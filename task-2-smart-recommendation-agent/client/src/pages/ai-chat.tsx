@@ -10,13 +10,27 @@ import { Send } from "lucide-react";
 import NoMessageScreen from "./no-message-screen";
 import { ConversationMessages } from "./components/conversation-messages";
 
+import type { MessageType } from "./components/conversation-messages";
+import { nanoid } from "nanoid";
 
 const AiChatPage = () => {
 
   const [prompt, setPrompt] = useState("");
 
   // 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
+
+  // handle send messages
+  const handleSendPrompt = (prompt: string) => {
+    if (!prompt) return;
+    setMessages((prev) => [...prev, {
+      key: nanoid(),
+      value: prompt,
+      name: "Abraham",
+      sender: "user",
+    }]);
+    setPrompt("");
+  }
 
 
   return (
@@ -27,7 +41,7 @@ const AiChatPage = () => {
         messages.length === 0 ? (
           <NoMessageScreen setPrompt={setPrompt} />
         ) : (
-          <ConversationMessages />
+          <ConversationMessages messages={messages} />
         )
       }
 
@@ -45,11 +59,11 @@ const AiChatPage = () => {
           />
 
           <InputGroupAddon align="inline-end">
-            <Button>
+            <Button onClick={() => handleSendPrompt(prompt)}>
               <Send className="size-5" />
             </Button>
           </InputGroupAddon>
-          
+
         </InputGroup>
       </div>
     </section>
