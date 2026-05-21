@@ -4,10 +4,13 @@ import getEnv from "./utils/env";
 import router from "./routes/index.route";
 import AppError from "./utils/AppError";
 
+import cors from "cors";
+
 const app = express();
 
 const PORT = getEnv("PORT");
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
