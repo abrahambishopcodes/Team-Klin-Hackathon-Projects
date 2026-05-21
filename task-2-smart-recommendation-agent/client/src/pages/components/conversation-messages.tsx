@@ -9,6 +9,12 @@ import {
 import ProductCard from "./product-card"
 import type { AiRecommendproductResponse } from "@/types"
 
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ui/reasoning"
+
 export interface MessageType {
   key: string
   value: AiRecommendproductResponse["data"] | string,
@@ -33,15 +39,19 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
                 
                 // AI response
                 (<div>
-                  <p className="text-sm">{value.main_reasoning}</p>
+                  <Reasoning isStreaming={false} duration={Number(value.tokenUsage.completion_time.toFixed(2))}>
+                    <ReasoningTrigger />
+                    <ReasoningContent>{value.main_reasoning}</ReasoningContent>
+                  </Reasoning>
 
                   {/* products card and reasoning */}
-                  <div className="flex flex-col gap-6 mt-4">
-                    {value.products.map((product, i) => (
+                  {/* TODO: Add better empty state */}
+                  <div className="flex flex-col gap-8 mt-4">
+                    {value.products.length > 0 ? value.products.map((product, i) => (
                       <div className="" key={product.parent_asin}>
                         <ProductCard product={product} index={i} />
                       </div>
-                    ))}
+                    )) : <p>No products found</p>}
                   </div>
                 </div>)
 

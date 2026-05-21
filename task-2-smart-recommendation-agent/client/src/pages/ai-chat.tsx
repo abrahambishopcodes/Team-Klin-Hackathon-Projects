@@ -47,9 +47,13 @@ const AiChatPage = () => {
       user_persona: JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
     }) as AiRecommendproductResponse;
 
+    console.log(response)
+
     if (response.success) {
       // add response to messages
       addToMessage(response.data, "assistant", "Reco");
+    } else {
+      addToMessage("Sorry, I couldn't find any products for you. Please try again.", "assistant", "Reco")
     }
 
     setPrompt("");
