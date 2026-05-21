@@ -4,6 +4,7 @@ import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
 import {
   aiRecommendProducts,
+  extractProfileFromColdStatusText,
   generateQuery,
   RerankedProduct,
   UserPersona,
@@ -11,6 +12,8 @@ import {
 
 import { RerankResponseDataItem } from "voyageai";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
+
+import AppError from "../utils/AppError";
 
 interface ProductFields {
   title?: string;
@@ -52,20 +55,21 @@ export const recommendProductsController = async (
   }
 
   //   get the user persona based on whether the message is cold_start or not
+
   const persona = cold_start
     ? user_persona
     : (user?.persona_summary as unknown as UserPersona);
 
 
   if (!persona) {
-    throw new Error("User persona is required");
+    throw new AppError("User persona is required", 400);
   }
 
   // * use the llm to generate a query based on the user's query and their profile
   const generatedQuery = await generateQuery(persona, user_query);
 
   if (!generatedQuery) {
-    throw new Error("Failed to generate query");
+    throw new AppError("Failed to generate query", 400);
   }
 
   // embedded the user query
@@ -164,3 +168,16 @@ export const recommendProductsController = async (
     tokenUsage: aiProductRecommendationResponse.usage,
   });
 };
+
+// * Controller to generate a structured and detailed user_persona based on the user's cold status text
+export const generateColdUserPersonaController = async (req: Request, res: Response) => {
+  const { personaText } = req.body;
+
+  if (!personaText) {
+    throw new AppError("Persona text is required", 400);
+  }
+
+  const persona = await extractProfileFromColdStatusText(personaText);
+
+  sendSuccessResponse(res, 200, "Persona generated successfully", JSON.parse(persona as string));
+}

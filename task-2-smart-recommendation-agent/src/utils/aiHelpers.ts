@@ -47,6 +47,130 @@ export const generateQuery = async (
   return queryResponse?.choices?.[0]?.message?.content;
 };
 
+// * LLM to extract profile from cold status text
+export const extractProfileFromColdStatusText = async (personaText: string) => {
+  const profileResponse = await groq.chat.completions.create({
+    model: "openai/gpt-oss-120b",
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "user_persona",
+        schema: {
+          type: "object",
+          properties: {
+            price_sensitivity: {
+              type: "string",
+            },
+            price_range_estimate: {
+              type: "string",
+            },
+            preferred_categories: {
+              type: "array",
+              items: {
+                type: "string",
+              },
+            },
+            purchase_drivers: {
+              type: "array",
+              items: {
+                type: "string",
+              },
+            },
+            brand_signals: {
+              type: "array",
+              items: {
+                type: "string",
+              },
+            },
+            quality_bar: {
+              type: "string",
+            },
+            typical_dealbreakers: {
+              type: "array",
+              items: {
+                type: "string",
+              },
+            },
+            taste_summary: {
+              type: "string",
+            },
+            review_tone_patterns: {
+              type: "string",
+            },
+            recent_purchases: {
+              type: "array",
+              items: {
+                type: "string",
+              },
+            },
+            cold_start: {
+              type: "boolean",
+            },
+            cold_start_confidence: {
+              type: "string",
+            },
+            inference_notes: {
+              type: "string",
+            },
+          },
+          required: [
+            "price_sensitivity",
+            "price_range_estimate",
+            "preferred_categories",
+            "purchase_drivers",
+            "brand_signals",
+            "quality_bar",
+            "typical_dealbreakers",
+            "taste_summary",
+            "review_tone_patterns",
+            "recent_purchases",
+            "cold_start",
+            "cold_start_confidence",
+            "inference_notes",
+          ],
+        }
+      }
+    },
+    messages: [
+      {
+        role: "system",
+        content: `You are a user profiling agent. A new user with no purchase history 
+has described themselves. Extract their taste profile from this description alone.
+
+USER DESCRIPTION:
+"${personaText}"
+
+Guidelines per field:
+- price_sensitivity: "budget" | "mid-range" | "premium" | "unknown"
+- price_range_estimate: concrete range like "$20-$60" or "unknown"
+- preferred_categories: only categories explicitly mentioned or strongly implied
+- purchase_drivers: what they value — infer from adjectives they use
+- brand_signals: only brands they actually mention
+- quality_bar: one sentence on what quality means to this person
+- typical_dealbreakers: only if they mention things they dislike
+- taste_summary: 2 sentences summarising who this person is as a buyer
+- cold_start_confidence: "low" | "medium" | "high"
+  low = vague description, few signals
+  medium = some clear signals, some gaps
+  high = rich description, many clear signals
+- inference_notes: 1 sentence on what you could NOT determine and why
+
+`
+      },
+      {
+        role: "user",
+        content: `
+        Be conservative — only extract what is genuinely stated or clearly implied.
+Do not invent signals that are not present in the description.
+If something is unclear, reflect that uncertainty in the output.
+        `,
+      },
+    ],
+  });
+
+  return profileResponse?.choices?.[0]?.message?.content;
+}
+
 // * LLM to recommend final products from the reranked results and reason on why it is recommending the product
 
 export const aiRecommendProducts = async (
