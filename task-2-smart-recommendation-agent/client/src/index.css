@@ -141,4 +141,10 @@
   h4 {
     @apply text-xl font-semibold font-heading;
   }
+};
+
+@layer components {
+  .section {
+    @apply w-full h-full flex flex-col items-center justify-center gap-12;
+  }
 }
