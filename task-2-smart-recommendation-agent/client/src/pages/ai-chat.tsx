@@ -15,6 +15,10 @@ import { nanoid } from "nanoid";
 import { generateRecommendation } from "@/api/ai-chat";
 import type { AiRecommendproductResponse } from "@/types";
 
+import { Loader } from "@/components/ui/loader";
+
+import { useMutation } from "@tanstack/react-query"
+
 const AiChatPage = () => {
 
   const [prompt, setPrompt] = useState("");
@@ -30,31 +34,35 @@ const AiChatPage = () => {
     }]);
   }
 
+  // mutation hook to handle api recommendation call
+  const {mutateAsync, isPending} = useMutation({
+    mutationFn: (prompt: string) => generateRecommendation({
+      user_query: prompt,
+      cold_start: true,
+      user_persona: JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
+    }),
+    onSuccess: (data) => {
+      if (data.success) {
+        addToMessage(data.data, "assistant", "Reco");
+      }
+    },
+    onError: (error: Error) => {
+      console.log(error);
+      addToMessage("Sorry, I'm having trouble getting the task done, try again! If issue persists, contact support or try again later.", "assistant", "Reco");
+    }
+  })
+
   // handle send messages
   const handleSendPrompt = async (prompt: string) => {
     if (!prompt) return;
 
-    // NOTE: change name to dynamic user name or a generic name
     // TODO: Add reasoning streaming
-    addToMessage(prompt, "user", "Abraham");
+    addToMessage(prompt, "user", "User");
 
     console.log("sending to llm ...")
 
     // send user query to api
-    const response = await generateRecommendation({
-      user_query: prompt,
-      cold_start: true,
-      user_persona: JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
-    }) as AiRecommendproductResponse;
-
-    console.log(response)
-
-    if (response.success) {
-      // add response to messages
-      addToMessage(response.data, "assistant", "Reco");
-    } else {
-      addToMessage("Sorry, I couldn't find any products for you. Please try again.", "assistant", "Reco")
-    }
+    await mutateAsync(prompt);
 
     setPrompt("");
   }
@@ -85,8 +93,8 @@ const AiChatPage = () => {
           />
 
           <InputGroupAddon align="inline-end">
-            <Button onClick={() => handleSendPrompt(prompt)}>
-              <Send className="size-5" />
+            <Button disabled={isPending} onClick={() => handleSendPrompt(prompt)}>
+              {isPending ? <Loader size={24} /> : <Send className="size-5" />}
             </Button>
           </InputGroupAddon>
 
