@@ -4,9 +4,11 @@ import voyage from "../config/voyage.config";
 import prisma from "../lib/prisma.lib";
 import {
   aiRecommendProducts,
+  ColdStartUserPersona,
   extractProfileFromColdStatusText,
   generateQuery,
   RerankedProduct,
+  rewriteColdStartQuery,
   UserPersona,
 } from "../utils/aiHelpers";
 
@@ -39,9 +41,8 @@ export const recommendProductsController = async (
 
   let user = null;
 
-  if (cold_start) {
-    // perform cold start actions
-  } else {
+  // if the user is not cold_start, fetch the user from the database
+  if (!cold_start) {
     // Fetch user from database
     user = await prisma.user.findUnique({
       where: {
@@ -55,18 +56,19 @@ export const recommendProductsController = async (
   }
 
   //   get the user persona based on whether the message is cold_start or not
-
-  const persona = cold_start
-    ? user_persona
-    : (user?.persona_summary as unknown as UserPersona);
-
+  const persona = user_persona || (user?.persona_summary);
 
   if (!persona) {
     throw new AppError("User persona is required", 400);
   }
 
-  // * use the llm to generate a query based on the user's query and their profile
-  const generatedQuery = await generateQuery(persona, user_query);
+  // generate query based on whether the message is cold_start or not
+  let generatedQuery = null;
+  if (cold_start) {
+    generatedQuery = await rewriteColdStartQuery(persona as ColdStartUserPersona, user_query);
+  } else {
+    generatedQuery = await generateQuery(persona as UserPersona, user_query);
+  }
 
   if (!generatedQuery) {
     throw new AppError("Failed to generate query", 400);
@@ -142,6 +144,7 @@ export const recommendProductsController = async (
     persona,
     user_query,
     reRankedProducts as RerankedProduct[],
+    cold_start,
   );
 
   const recommendedProducts = JSON.parse(

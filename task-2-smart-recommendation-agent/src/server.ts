@@ -20,10 +20,9 @@ app.listen(PORT, () => {
 
 // global error handler
 app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
-    err.statusCode = err.statusCode || 500;
     err.message = err.message || "Internal server error";
     
-    return res.status(err.statusCode).json({
+    return res.status(err.statusCode || 500).json({
         status: err.status,
         message: err.message,
         isOperational: err.isOperational,

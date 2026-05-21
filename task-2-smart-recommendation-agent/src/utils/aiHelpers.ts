@@ -13,12 +13,19 @@ export interface UserPersona {
   typical_dealbreakers: string[];
 }
 
+export interface ColdStartUserPersona extends UserPersona {
+  cold_start: boolean;
+  cold_start_confidence: string;
+  inference_notes: string;
+}
+
+
 export interface RerankedProduct {
   confidenceScore: number;
   product: any;
 }
 
-//  * use the llm to generate a query based on the user's query and their profile
+//  * use the llm to generate a query based on the user's query and their profile - For existing users
 
 export const generateQuery = async (
   user_persona: UserPersona,
@@ -45,6 +52,42 @@ export const generateQuery = async (
   });
 
   return queryResponse?.choices?.[0]?.message?.content;
+};
+
+// * use the llm to generate a query based on the user's query and their profile - For cold start users
+export const rewriteColdStartQuery = async (
+  userPersona: ColdStartUserPersona,
+  userQuery: string,
+) => {
+
+ const queryResponse = await groq.chat.completions.create({
+  model: "llama-3.3-70b-versatile",
+  messages: [
+    {
+      role: "user",
+      content: `
+Rewrite this product search query to be more specific and useful for retrieval.
+
+The user is new — we have no purchase history. 
+Base the rewrite only on their described preferences.
+
+User preferences:
+${JSON.stringify(userPersona)}
+
+Original query: "${userQuery}"
+
+If confidence is low, keep the rewrite close to the original query.
+If confidence is high, enrich it with inferred signals.
+
+Return only the rewritten query as plain text. One sentence. No preamble.
+Generate a query that will help retrieve relevant information from the vector database.
+  `.trim()
+    }
+  ]
+ })
+
+ return queryResponse.choices[0]?.message.content;
+
 };
 
 // * LLM to extract profile from cold status text
@@ -174,10 +217,26 @@ If something is unclear, reflect that uncertainty in the output.
 // * LLM to recommend final products from the reranked results and reason on why it is recommending the product
 
 export const aiRecommendProducts = async (
-  user_persona: UserPersona,
+  user_persona: any,
   userQuery: string,
   rerankedResults: RerankedProduct[],
+  cold_start: boolean,
 ) => {
+
+  const coldStartInstructions = cold_start ? `
+  === NOTE THIS VERY IMPORANT INSTRUCTION === 
+IMPORTANT — COLD START USER:
+This user has no purchase history. Their profile was inferred entirely 
+from a text description. Confidence level: ${user_persona.cold_start_confidence}.
+
+Inference gaps: ${user_persona.inference_notes}
+
+Adjust your recommendations accordingly:
+- If confidence is LOW: stay close to the literal query, avoid assumptions
+- If confidence is MEDIUM: apply clear signals, be cautious on implied ones  
+- If confidence is HIGH: apply full profile signals as you would for existing user
+- Be transparent in reasoning_summary that this is a cold start recommendation
+` : ""
 
   // compress the user persona to fit the llm context window
   const compressUserPersona = (persona: UserPersona): string => {
@@ -271,6 +330,8 @@ export const aiRecommendProducts = async (
 
         === PRODUCTS ===
         ${JSON.stringify(products)}
+
+        ${coldStartInstructions}
 
         === HOW TO REASON ===
         STEP 1 — DECODE AND UNDERSTAND THE USER

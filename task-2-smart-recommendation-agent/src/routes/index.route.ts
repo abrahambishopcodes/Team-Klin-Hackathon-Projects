@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
-import { generateColdUserPersonaController } from "../controllers/index.controller";
+import { generateColdUserPersonaController, recommendProductsController } from "../controllers/index.controller";
 
 const router = Router();
 
@@ -9,9 +9,7 @@ router.get("/health", (req: Request, res: Response) => {
   sendSuccessResponse(res, 200, "OK", null);
 });
 
-router.post("/recommend", async (req: Request, res: Response) => {
-
-});
+router.post("/recommend", recommendProductsController);
 
 router.post("/generate-user-persona", generateColdUserPersonaController);
 
