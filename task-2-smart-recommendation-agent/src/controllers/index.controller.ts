@@ -157,17 +157,15 @@ export const recommendProductsController = async (
       (p) => p?.product?.parent_asin === r.asin,
     );
     return {
-      ...product,
+      ...product?.product,
       reasoning: r.reasoning,
     };
   });
 
   sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
     interpretedQuery: generatedQuery,
-    products: {
-      ...finalResults,
-      main_reasoning: recommendedProducts.main_reasoning,
-    },
+    products: finalResults,
+    main_reasoning: recommendedProducts.main_reasoning,
     tokenUsage: aiProductRecommendationResponse.usage,
   });
 };
