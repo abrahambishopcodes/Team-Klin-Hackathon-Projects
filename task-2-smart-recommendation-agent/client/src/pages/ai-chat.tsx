@@ -1,34 +1,71 @@
-import { Suggestion, Suggestions } from "@/components/ui/suggestion"
+import { Suggestion, Suggestions } from "@/components/ui/suggestion";
+import {
+  InputGroup,
+  InputGroupTextarea,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Info } from "lucide-react";
 
 const starterPrompts = [
-    "I need a power bank that can charge my laptop on the go",
-    "I want to start a home gym with minimal equipment",
-    "Find me healthy snacks I can order in bulk",
-    "What are the best noise cancelling headphones for travel?",
-    "I'm looking for a gift for my dad who loves golf",
-]
+  "I need a power bank that can charge my laptop on the go",
+  "I want to start a home gym with minimal equipment",
+  "Find me healthy snacks I can order in bulk",
+  "What are the best noise cancelling headphones for travel?",
+  "I'm looking for a gift for my dad who loves golf",
+];
 
 const AiChatPage = () => {
   return (
-    <section className="w-full h-full flex flex-col items-center justify-center">
-        {/* Brand Section */}
-        <div className="flex flex-col items-center gap-4">
-            {/* logo */}
-            <img src="/reco_logo.svg" alt="Reco AI" className="size-24 scale-150" />
-            <h1>Reco</h1>
-            <p>Products picked for you, not everyone</p>
-        </div>
+    <section className="w-full h-full flex flex-col items-center justify-center gap-12">
+      {/* Brand Section */}
+      <div className="flex flex-col items-center gap-4">
+        {/* logo */}
+        <img src="/reco_logo.svg" alt="Reco AI" className="size-24 scale-150" />
+        <h1>Reco</h1>
+        <p>Products picked for you, not everyone</p>
+      </div>
 
-        {/* Starter Prompts */}
-        <div className="w-full flex mt-10">
-            <Suggestions className="flex flex-wrap w-[80%] mx-auto justify-center gap-y-4">
-                {starterPrompts.map((prompt, index) => (
-                    <Suggestion className="p-4" key={index} suggestion={prompt} onClick={() => {}} />
-                ))}
-            </Suggestions>
-        </div>
+      {/* Starter Prompts */}
+      <div className="w-full flex">
+        <Suggestions className="flex flex-wrap w-[80%] mx-auto justify-center gap-y-4">
+          {starterPrompts.map((prompt, index) => (
+            <Suggestion
+              className="p-4"
+              key={index}
+              suggestion={prompt}
+              onClick={() => {}}
+            />
+          ))}
+        </Suggestions>
+      </div>
+
+      {/* Text area for cold start */}
+      <div className="w-full flex justify-center">
+        <Field className="w-full max-w-2xl">
+          <FieldLabel className="font-bold text-2xl flex items-center gap-2 mb-1">
+            <img src="/snow_flake.svg" className="size-6" alt="" />
+            Tell us a little about yourself first
+          </FieldLabel>
+          <InputGroup className="bg-secondary border-border p-2 focus-visible:ring-0">
+            <InputGroupTextarea
+              className="placeholder:text-foreground/50 placeholder:text-sm"
+              placeholder="I'm a 28-year-old Lagos professional. I love tech gadgets, value for money 
+matters to me, I recently started home fitness..."
+            />
+            <InputGroupAddon align="block-end">
+              <p className="ml-auto text-foreground/50">0 / 500</p>
+            </InputGroupAddon>
+          </InputGroup>
+          <FieldDescription className="text-foreground/50 flex items-center gap-2">
+          <Info className="size-4" />
+            No history needed. Just tell us about your preferences, lifestyle, or
+            what you're looking for.
+          </FieldDescription>
+        </Field>
+      </div>
     </section>
-  )
-}
+  );
+};
 
-export default AiChatPage
+export default AiChatPage;
