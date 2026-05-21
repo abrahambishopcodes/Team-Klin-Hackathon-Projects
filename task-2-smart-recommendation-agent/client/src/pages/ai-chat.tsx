@@ -9,6 +9,7 @@ import { Info, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useState } from "react";
+import { ConversationMessages } from "./components/conversation-messages";
 
 const starterPrompts = [
   "I need a power bank that can charge my laptop on the go",
@@ -22,9 +23,13 @@ const AiChatPage = () => {
 
   const userProfileKey = "reco_user_profile"
 
+  // state for user profile
   const [userProfile, setUserProfile] = useState(localStorage.getItem(userProfileKey));
   const [userProfileText, setUserProfileText] = useState("");
   const [prompt, setPrompt] = useState("");
+
+  // 
+  const [messages, setMessages] = useState([]);
 
   // function to save user profile to local storage
   const handleSaveUserProfile = () => {
@@ -40,6 +45,11 @@ const AiChatPage = () => {
         <img src="/reco_logo.svg" alt="Reco AI" className="size-24 scale-150" />
         <h1>Reco</h1>
         <p>Products picked for you, not everyone</p>
+      </div>
+
+      {/* Conversation Messages */}
+      <div className="w-full">
+          {/* <ConversationMessages /> */}
       </div>
 
       {/* Starter Prompts */}
@@ -73,6 +83,7 @@ matters to me, I recently started home fitness..."
             />
             <InputGroupAddon align="block-end">
               <Button className="font-bold" onClick={handleSaveUserProfile}>Save</Button>
+              <Button className="font-bold">Use Template</Button>
               <p className="ml-auto text-foreground/50">0 / 500</p>
             </InputGroupAddon>
           </InputGroup>
