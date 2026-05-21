@@ -12,6 +12,8 @@ import { ConversationMessages } from "./components/conversation-messages";
 
 import type { MessageType } from "./components/conversation-messages";
 import { nanoid } from "nanoid";
+import { generateRecommendation } from "@/api/ai-chat";
+import type { AiRecommendproductResponse } from "@/types";
 
 const AiChatPage = () => {
 
@@ -19,19 +21,39 @@ const AiChatPage = () => {
 
   // 
   const [messages, setMessages] = useState<MessageType[]>([]);
-
-  // handle send messages
-  const handleSendPrompt = (prompt: string) => {
-    if (!prompt) return;
+  const addToMessage = (value: AiRecommendproductResponse["data"] | string, sender: MessageType["sender"], name: string) => {
     setMessages((prev) => [...prev, {
       key: nanoid(),
-      value: prompt,
-      name: "Abraham",
-      sender: "user",
+      value,
+      name,
+      sender,
     }]);
-    setPrompt("");
   }
 
+  // handle send messages
+  const handleSendPrompt = async (prompt: string) => {
+    if (!prompt) return;
+
+    // NOTE: change name to dynamic user name or a generic name
+    // TODO: Add reasoning streaming
+    addToMessage(prompt, "user", "Abraham");
+
+    console.log("sending to llm ...")
+
+    // send user query to api
+    const response = await generateRecommendation({
+      user_query: prompt,
+      cold_start: true,
+      user_persona: JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
+    }) as AiRecommendproductResponse;
+
+    if (response.success) {
+      // add response to messages
+      addToMessage(response.data, "assistant", "Reco");
+    }
+
+    setPrompt("");
+  }
 
   return (
     <section className="section">
