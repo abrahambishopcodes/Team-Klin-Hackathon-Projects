@@ -7,7 +7,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import { generateColdStartUserProfile } from "@/api/ai-chat";
@@ -28,6 +28,19 @@ const NoMessageScreen = ({ setPrompt }: NoMessageScreenProps) => {
   const userProfileKey = "reco_user_profile";
   const [userProfileText, setUserProfileText] = useState("");
   const [userProfile, setUserProfile] = useState(null);
+
+  // useEffect to get user profile from local storage
+  useEffect(() => {
+    
+    async function getUserProfile() {
+      const userProfile = localStorage.getItem(userProfileKey);
+      if (userProfile) {
+        setUserProfile(JSON.parse(userProfile));
+      }
+    }
+
+    getUserProfile();
+  }, []);
 
   // function to save user profile to local storage
   const handleSaveUserProfile = async () => {
