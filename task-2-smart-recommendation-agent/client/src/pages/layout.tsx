@@ -8,9 +8,6 @@ const Layout = () => {
       <AppSidebar />
       {/* Main content */}
       <div className="w-full flex flex-col flex-1 min-w-0 overflow-hidden h-screen">
-          <header className="h-12">
-            Header
-          </header>
           <main className="p-4 w-full h-full">
             <Outlet />
           </main>

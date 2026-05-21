@@ -75,7 +75,7 @@ const AiChatPage = () => {
         messages.length === 0 ? (
           <NoMessageScreen setPrompt={setPrompt} />
         ) : (
-          <ConversationMessages messages={messages} />
+          <ConversationMessages messages={messages} isPending={isPending} />
         )
       }
 

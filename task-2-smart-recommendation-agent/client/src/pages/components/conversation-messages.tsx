@@ -25,10 +25,11 @@ export interface MessageType {
 }
 
   interface ConversationMessagesProps {
-    messages: MessageType[]
+    messages: MessageType[],
+    isPending: boolean,
   }
 
-export function ConversationMessages({messages}: ConversationMessagesProps) {
+export function ConversationMessages({messages, isPending}: ConversationMessagesProps) {
 
 
   return (
@@ -37,6 +38,7 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
       <ConversationContent>
           {messages.map(({ key, value, name, sender }) => (
             <Message from={sender} key={key}>
+
               <MessageContent className="text-lg">{
                 typeof value === "string" ? value : 
                 
@@ -46,6 +48,8 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
                     <ReasoningTrigger className="text-yellow-300 hover:text-yellow-400" />
                     <ReasoningContent className="text-gray-300 font-mono">{value.main_reasoning}</ReasoningContent>
                   </Reasoning>
+
+                  <h3 className="text-lg font-semibold mt-4">{value.products.length} Total Recommendations</h3>
 
                   {/* products card and reasoning */}
                   {/* TODO: Add better empty state */}
@@ -60,6 +64,7 @@ export function ConversationMessages({messages}: ConversationMessagesProps) {
 
 
                 }</MessageContent>
+
               {sender === "assistant" && <MessageAvatar name={name} src="/reco_logo.svg" />}
             </Message>
           ))}
