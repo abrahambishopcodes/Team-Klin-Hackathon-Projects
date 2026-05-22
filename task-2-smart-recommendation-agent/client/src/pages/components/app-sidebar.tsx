@@ -85,9 +85,11 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
         <SidebarFooter className="p-2 mb-4 ml-2">
-          <SidebarMenuItem className="flex items-center gap-2">
-            <Settings />
-            Settings
+          <SidebarMenuItem>
+            <Button variant="outline" className="button mt-1 h-10 bg-transparent">
+              <Settings />
+              Edit Profile
+            </Button>
           </SidebarMenuItem>
         </SidebarFooter>
     </Sidebar>
