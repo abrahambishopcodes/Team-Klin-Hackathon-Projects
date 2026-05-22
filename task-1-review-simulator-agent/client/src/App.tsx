@@ -7,11 +7,12 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "./pages/layout";
 import { Toaster } from "react-hot-toast";
+import ReviewPage from "./pages/review-page";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />}>
-      <Route index element={<div>Hello there</div>} />
+      <Route index element={<ReviewPage />} />
     </Route>,
   ),
 );

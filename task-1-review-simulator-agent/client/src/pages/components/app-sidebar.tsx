@@ -13,7 +13,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <h2 className="text-2xl font-black tracking-tight text-primary-bold leading-none">
-              REUVE
+              REVUE
             </h2>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground/80 font-bold mt-1">
               Review Simulator Agent
