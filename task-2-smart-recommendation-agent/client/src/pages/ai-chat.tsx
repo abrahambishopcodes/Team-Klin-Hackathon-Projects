@@ -9,11 +9,7 @@ import { useState } from "react";
 import { Send } from "lucide-react";
 import NoMessageScreen from "./no-message-screen";
 import { ConversationMessages } from "./components/conversation-messages";
-
-import type { MessageType } from "./components/conversation-messages";
-import { nanoid } from "nanoid";
 import { generateRecommendation } from "@/api/index.api";
-import type { AiRecommendproductResponse } from "@/types";
 
 import { Loader } from "@/components/ui/loader";
 
@@ -21,6 +17,7 @@ import { useMutation } from "@tanstack/react-query"
 import { Badge } from "@/components/ui/badge";
 
 import {useUserStore} from "@/hooks/useUserStore";
+import { useMessageStore } from "@/hooks/useStoreMessages";
 
 const AiChatPage = () => {
 
@@ -28,16 +25,8 @@ const AiChatPage = () => {
 
   const {username, user_id, avatarUrl} = useUserStore();
 
-  // 
-  const [messages, setMessages] = useState<MessageType[]>([]);
-  const addToMessage = (value: AiRecommendproductResponse["data"] | string, sender: MessageType["sender"], name: string) => {
-    setMessages((prev) => [...prev, {
-      key: nanoid(),
-      value,
-      name,
-      sender,
-    }]);
-  }
+  
+  const {messages, addMessage} = useMessageStore();
 
   // mutation hook to handle api recommendation call
   const {mutateAsync, isPending} = useMutation({
@@ -49,12 +38,12 @@ const AiChatPage = () => {
     }),
     onSuccess: (data) => {
       if (data.success) {
-        addToMessage(data.data, "assistant", "Reco");
+        addMessage(data.data, "assistant", "Reco");
       }
     },
     onError: (error: Error) => {
       console.log(error);
-      addToMessage("Sorry, I'm having trouble getting the task done, try again! If issue persists, contact support or try again later.", "assistant", "Reco");
+      addMessage("Sorry, I'm having trouble getting the task done, try again! If issue persists, contact support or try again later.", "assistant", "Reco");
     }
   })
 
@@ -63,7 +52,7 @@ const AiChatPage = () => {
     if (!prompt) return;
 
     // TODO: Add reasoning streaming
-    addToMessage(prompt, "user", "User");
+    addMessage(prompt, "user", username || "Cold Start");
 
     // send user query to api
     await mutateAsync(prompt);

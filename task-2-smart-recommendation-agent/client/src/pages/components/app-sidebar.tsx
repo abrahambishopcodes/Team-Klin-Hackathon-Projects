@@ -16,11 +16,13 @@ import { getAllDemoUsers } from "@/api/index.api";
 import { useQuery } from "@tanstack/react-query";
 
 import { useUserStore } from "@/hooks/useUserStore";
+import { useMessageStore } from "@/hooks/useStoreMessages";
 
 export function AppSidebar() {
 
   const setUser = useUserStore((state) => state.setUser);
   const clearDemoUser = useUserStore((state) => state.clearDemoUser);
+  const clearMessages = useMessageStore((state) => state.clearMessages);
 
   const {data: demoUsers, isLoading} = useQuery({
     queryKey: ["all-demo-users"],
@@ -49,11 +51,14 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <Button className="button mt-4 h-10">
+        <Button onClick={() => clearMessages()} className="button mt-4 h-10">
           <Plus className="size-5" />
           New Search
         </Button>
-        <Button onClick={() => clearDemoUser()} variant="outline" className="button mt-1 h-10 bg-transparent">
+        <Button onClick={() => {
+          clearDemoUser();
+          clearMessages();
+        }} variant="outline" className="button mt-1 h-10 bg-transparent">
           <RotateCw className="size-5" />
           Cold Start
         </Button>
