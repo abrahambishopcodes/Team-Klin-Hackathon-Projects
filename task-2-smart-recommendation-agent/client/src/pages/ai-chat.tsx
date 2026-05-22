@@ -3,7 +3,7 @@ import {
   InputGroupTextarea,
   InputGroupAddon,
 } from "@/components/ui/input-group";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Send } from "lucide-react";
@@ -18,10 +18,15 @@ import type { AiRecommendproductResponse } from "@/types";
 import { Loader } from "@/components/ui/loader";
 
 import { useMutation } from "@tanstack/react-query"
+import { Badge } from "@/components/ui/badge";
+
+import {useUserStore} from "@/hooks/useUserStore";
 
 const AiChatPage = () => {
 
   const [prompt, setPrompt] = useState("");
+
+  const {username, user_id, avatarUrl} = useUserStore();
 
   // 
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -38,8 +43,9 @@ const AiChatPage = () => {
   const {mutateAsync, isPending} = useMutation({
     mutationFn: (prompt: string) => generateRecommendation({
       user_query: prompt,
-      cold_start: true,
-      user_persona: JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
+      user_id: user_id,
+      cold_start: user_id ? false : true,
+      user_persona: user_id ? null : JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
     }),
     onSuccess: (data) => {
       if (data.success) {
@@ -58,8 +64,6 @@ const AiChatPage = () => {
 
     // TODO: Add reasoning streaming
     addToMessage(prompt, "user", "User");
-
-    console.log("sending to llm ...")
 
     // send user query to api
     await mutateAsync(prompt);
@@ -80,7 +84,13 @@ const AiChatPage = () => {
       }
 
       {/* prompt input */}
-      <div className="max-w-5xl w-full flex items-center  mt-auto mb-8">
+      <div className="max-w-5xl w-full flex flex-col mt-auto gap-2 mb-8">
+
+        <Badge className="bg-muted text-foreground text-sm p-4">
+          {user_id && <img src={avatarUrl} alt={username} className="size-6 rounded-full" />}
+          {user_id ? username : "Cold Start - You"}
+        </Badge>
+
         <InputGroup className="bg-muted border-border p-2 flex items-center">
           <InputGroupAddon align="inline-start">
             <MessageSquare className="size-5 text-foreground" />

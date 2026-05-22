@@ -14,17 +14,19 @@ import { Loader } from "@/components/ui/loader";
 import { type DemoUser } from "@/types";
 import { getAllDemoUsers } from "@/api/index.api";
 import { useQuery } from "@tanstack/react-query";
-import { CircleUserIcon } from "lucide-react";
+
+import { useUserStore } from "@/hooks/useUserStore";
 
 export function AppSidebar() {
+
+  const setUser = useUserStore((state) => state.setUser);
+  const clearDemoUser = useUserStore((state) => state.clearDemoUser);
 
   const {data: demoUsers, isLoading} = useQuery({
     queryKey: ["all-demo-users"],
     queryFn: getAllDemoUsers,
     select: (data) => data.data as DemoUser[],
   })
-
-  console.log("demo users", demoUsers)
 
   return (
     <Sidebar>
@@ -51,7 +53,7 @@ export function AppSidebar() {
           <Plus className="size-5" />
           New Search
         </Button>
-        <Button variant="outline" className="button mt-1 h-10 bg-transparent">
+        <Button onClick={() => clearDemoUser()} variant="outline" className="button mt-1 h-10 bg-transparent">
           <RotateCw className="size-5" />
           Cold Start
         </Button>
@@ -62,10 +64,14 @@ export function AppSidebar() {
           <div className="flex flex-col gap-2 px-4">
           {
             isLoading ? <Loader className="mt-4" size={26} /> : (
-              demoUsers?.map((demoUser, index) => (
-                <SidebarMenuItem className="flex items-center gap-2" key={demoUser.id} >
-                  <img src={demoUser.avatarUrl} alt={demoUser.user_name} className="size-5 rounded-full" />
-                  <span className="truncate">{demoUser.user_name}</span>
+              demoUsers?.map((demoUser) => (
+                <SidebarMenuItem key={demoUser.id} >
+                  <Button 
+                  onClick={() => setUser(demoUser.user_name, demoUser.user_id, demoUser.avatarUrl)}
+                   variant="outline" className="w-full h-12 bg-transparent">
+                    <img src={demoUser.avatarUrl} alt={demoUser.user_name} className="size-6 rounded-full" />
+                  <span className="text-sm font-bold">{demoUser.user_name}</span>
+                  </Button>
                 </SidebarMenuItem>
               ))
             )
