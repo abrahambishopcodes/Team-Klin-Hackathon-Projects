@@ -18,10 +18,15 @@ import { Badge } from "@/components/ui/badge";
 
 import {useUserStore} from "@/hooks/useUserStore";
 import { useMessageStore } from "@/hooks/useStoreMessages";
+import { useColdProfileStore } from "@/hooks/useColdProfileStore";
+
+import toast from "react-hot-toast";
+import { ProfileEditDialog } from "./components/profile-edit-dialog";
 
 const AiChatPage = () => {
 
   const [prompt, setPrompt] = useState("");
+  const userProfile = useColdProfileStore((state) => state.userProfile);
 
   const {username, user_id, avatarUrl} = useUserStore();
 
@@ -50,6 +55,12 @@ const AiChatPage = () => {
   // handle send messages
   const handleSendPrompt = async (prompt: string) => {
     if (!prompt) return;
+
+    // prevent user from sending prompt if there is no profile and it is cold start
+    if (!user_id && !userProfile) {
+      toast("We need to know a little about you first, please fill in your profile");
+      return;
+    }
 
     // TODO: Add reasoning streaming
     addMessage(prompt, "user", username || "Cold Start");
@@ -98,6 +109,8 @@ const AiChatPage = () => {
           </InputGroupAddon>
 
         </InputGroup>
+
+        <ProfileEditDialog />
       </div>
     </section>
   );

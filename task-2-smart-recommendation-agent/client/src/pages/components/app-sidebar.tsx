@@ -8,7 +8,7 @@ import {
   SidebarHeader,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Plus, RotateCw, Settings } from "lucide-react";
+import { Plus, RotateCw } from "lucide-react";
 
 import { Loader } from "@/components/ui/loader";
 import { type DemoUser } from "@/types";
@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useUserStore } from "@/hooks/useUserStore";
 import { useMessageStore } from "@/hooks/useStoreMessages";
+import { ProfileEditDialog } from "./profile-edit-dialog";
 
 export function AppSidebar() {
 
@@ -86,10 +87,7 @@ export function AppSidebar() {
       </SidebarContent>
         <SidebarFooter className="p-2 mb-4 ml-2">
           <SidebarMenuItem>
-            <Button variant="outline" className="button mt-1 h-10 bg-transparent">
-              <Settings />
-              Edit Profile
-            </Button>
+            <ProfileEditDialog />
           </SidebarMenuItem>
         </SidebarFooter>
     </Sidebar>

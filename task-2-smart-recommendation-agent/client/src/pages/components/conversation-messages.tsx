@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/reasoning"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useState } from "react"
 
 export interface MessageType {
   key: string
@@ -32,6 +33,9 @@ export interface MessageType {
   }
 
 export function ConversationMessages({messages, isPending}: ConversationMessagesProps) {
+
+  const [open, setOpen] = useState(true);
+
   return (
     <Conversation className="relative size-full max-w-5xl">
       <ScrollArea className="h-full">
@@ -43,9 +47,9 @@ export function ConversationMessages({messages, isPending}: ConversationMessages
                 
                 // AI response
                 (<div>
-                  <Reasoning isStreaming={false} duration={Number(value.tokenUsage.completion_time.toFixed(2))}>
+                  <Reasoning open={open} onOpenChange={setOpen} isStreaming={false} duration={Number(value.tokenUsage.completion_time.toFixed(2))}>
                     <ReasoningTrigger className="text-yellow-300 hover:text-yellow-400" />
-                    <ReasoningContent className="text-gray-300 font-mono">{value.main_reasoning}</ReasoningContent>
+                    <ReasoningContent  className="text-gray-300 font-mono">{value.main_reasoning}</ReasoningContent>
                   </Reasoning>
 
                   {value.products.length > 0 && (
