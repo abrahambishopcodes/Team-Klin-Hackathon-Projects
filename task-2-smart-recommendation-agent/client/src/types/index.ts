@@ -30,3 +30,25 @@ export interface AiRecommendproductResponse {
         };
     };
 };
+
+export interface DemoUser {
+    id: string;
+    user_id: string;
+    user_name: string;
+    avatarUrl: string;
+    rating_count: number;
+    avg_rating: number;
+    avg_rating_text_length: number;
+    persona_summary: {
+        quality_bar: string;
+        brand_signals: string[];
+        taste_summary: string;
+        purchase_drivers: string[];
+        recent_purchases: string[];
+        price_sensitivity: string;
+        preferred_categories: string[];
+        price_range_estimate: string;
+        review_tone_patterns: string;
+        typical_dealbreakers: string[];
+    }
+}

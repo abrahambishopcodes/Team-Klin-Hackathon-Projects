@@ -16,3 +16,8 @@ export const generateRecommendation = async (params: GenerateRecommendationParam
     const response = await api.post("/recommend", params);
     return response.data;
 }
+
+export const getAllDemoUsers = async () => {
+    const response = await api.get("/demo-users");
+    return response.data;
+}

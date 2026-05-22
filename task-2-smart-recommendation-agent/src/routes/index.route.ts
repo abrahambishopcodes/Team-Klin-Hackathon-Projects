@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
-import { generateColdUserPersonaController, recommendProductsController } from "../controllers/index.controller";
+import { generateColdUserPersonaController, getAllDemoUsers, recommendProductsController } from "../controllers/index.controller";
 
 const router = Router();
 
@@ -12,5 +12,7 @@ router.get("/health", (req: Request, res: Response) => {
 router.post("/recommend", recommendProductsController);
 
 router.post("/generate-user-persona", generateColdUserPersonaController);
+
+router.get("/demo-users", getAllDemoUsers)
 
 export default router;

@@ -182,3 +182,11 @@ export const generateColdUserPersonaController = async (req: Request, res: Respo
 
   sendSuccessResponse(res, 200, "Persona generated successfully", JSON.parse(persona as string));
 }
+
+// * Controller to retrieve list of demo users from prisma
+export const getAllDemoUsers = async (req: Request, res: Response) => {
+  const demoUsers = await prisma.user.findMany();
+
+  sendSuccessResponse(res, 200, "Demo users fetched successfully", demoUsers);
+
+}

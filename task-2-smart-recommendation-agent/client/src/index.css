@@ -145,6 +145,10 @@
 
 @layer components {
   .section {
-    @apply w-full h-full flex flex-col items-center justify-center gap-12;
+    @apply w-full h-full flex flex-col
+   items-center justify-center gap-12;
+  }
+  .button {
+    @apply h-12
   }
 }

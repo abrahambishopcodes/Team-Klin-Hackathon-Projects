@@ -12,7 +12,7 @@ import { ConversationMessages } from "./components/conversation-messages";
 
 import type { MessageType } from "./components/conversation-messages";
 import { nanoid } from "nanoid";
-import { generateRecommendation } from "@/api/ai-chat";
+import { generateRecommendation } from "@/api/index.api";
 import type { AiRecommendproductResponse } from "@/types";
 
 import { Loader } from "@/components/ui/loader";

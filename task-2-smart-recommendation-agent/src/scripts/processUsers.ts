@@ -71,6 +71,8 @@ async function processUsers() {
       await prisma.user.upsert({
         where: { user_id: userId },
         update: {
+          user_name: personaSummary.user_name || `User_${userId.substring(0,8)}`,
+          avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(personaSummary.user_name || userId)}`,
           rating_count: reviews.length,
           avg_rating: avgRating,
           avg_rating_text_length: avgTextLength,
@@ -78,6 +80,8 @@ async function processUsers() {
         },
         create: {
           user_id: userId,
+          user_name: personaSummary.user_name || `User_${userId.substring(0,8)}`,
+          avatarUrl: `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(personaSummary.user_name || userId)}`,
           rating_count: reviews.length,
           avg_rating: avgRating,
           avg_rating_text_length: avgTextLength,
@@ -119,6 +123,7 @@ async function generatePersonaSummary(reviews: RawReview[]) {
 Analyze the following product reviews from a single user and generate a rich, accurate persona summary in JSON format.
 
 The JSON should include:
+- user_name: string (generate a random name for this mock user)
 - preferred_categories: string[]
 - price_sensitivity: string (e.g., "High", "Medium", "Low" with brief reasoning)
 - quality_bar: string (what they look for in products)
@@ -126,11 +131,12 @@ The JSON should include:
 - review_tone_patterns: string (e.g., "Analytical", "Emotional", "Critical", "Brief")
 - typical_dealbreakers: string[]
 - purchase_drivers: string[]
-- taste_summary: string (2 to 3 sentence summary of the user's taste)
+- taste_summary: string (2 to 3 sentence summary of the user's products taste)
 - price_range_estimate: string (look at prices of items they've reviewed 
   and rated 4+ stars. Give a concrete dollar range. Add the currency symbol.)
 - recent_purchases: string[] (list the last 3-5 items they reviewed 
-  by timestamp, most recent first.)
+  by timestamp, most recent first. Must be strictly product's name. IF you cannot get the product name,
+  Do not bother adding it)
 
 User Reviews:
 ${reviewsContent}

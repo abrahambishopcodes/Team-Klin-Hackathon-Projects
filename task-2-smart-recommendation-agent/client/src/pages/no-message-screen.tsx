@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-import { generateColdStartUserProfile } from "@/api/ai-chat";
+import { generateColdStartUserProfile } from "@/api/index.api";
 
 const starterPrompts = [
   "I need a power bank that can charge my laptop on the go",
@@ -31,7 +31,7 @@ const NoMessageScreen = ({ setPrompt }: NoMessageScreenProps) => {
 
   // useEffect to get user profile from local storage
   useEffect(() => {
-    
+
     async function getUserProfile() {
       const userProfile = localStorage.getItem(userProfileKey);
       if (userProfile) {
