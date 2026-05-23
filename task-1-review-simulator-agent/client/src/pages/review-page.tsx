@@ -10,9 +10,9 @@ import { LetterText } from "lucide-react";
 const ReviewPage = () => {
   const reviews = useReviewsStore((state) => state.reviews)
   return (
-    <section className="w-full h-full flex mt-10 gap-8">
+    <section className="w-full h-full flex flex-col lg:flex-row mt-10 gap-8">
       {/* Left side - Review history upload */}
-      <div className="w-1/2">
+      <div className="w-full lg:w-1/2">
         <h2>Reviewer History</h2>
         <p>Upload past reviews to teach the AI how this person thinks.</p>
 
@@ -39,7 +39,7 @@ const ReviewPage = () => {
       </div>
 
       {/* Right side - Target product */}
-      <div className="w-1/2">
+      <div className="w-full lg:w-1/2">
         <TargetProductCard />
       </div>
     </section>

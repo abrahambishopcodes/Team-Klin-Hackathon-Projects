@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./components/app-sidebar"
 
 const Layout = () => {
@@ -7,11 +7,12 @@ const Layout = () => {
     <SidebarProvider>
       <AppSidebar />
       {/* Main content */}
-      <div className="w-full flex flex-col flex-1 min-w-0 overflow-hidden h-screen">
-          <main className="p-4 w-full h-full">
-            <Outlet />
-          </main>
+      <main className="w-full flex flex-col flex-1 min-w-0 overflow-hidden min-h-screen lg:h-screen">
+        <div className="p-4 w-full h-full">
+          <SidebarTrigger className="" />
+          <Outlet />
         </div>
+      </main>
     </SidebarProvider>
   )
 }
