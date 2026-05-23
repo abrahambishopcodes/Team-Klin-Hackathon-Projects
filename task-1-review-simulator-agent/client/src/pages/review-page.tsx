@@ -1,6 +1,8 @@
 import ReviewCard from "./components/review-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddReviewDialog } from "./components/add-review-dialog";
+import TargetProductCard from "./components/target-product-card";
+
 
 export interface ReviewedProduct {
   title: string;
@@ -44,7 +46,7 @@ const reviews: ReviewedProduct[] = [
 
 const ReviewPage = () => {
   return (
-    <section className="w-full h-full flex mt-10">
+    <section className="w-full h-full flex mt-10 gap-8">
       {/* Left side - Review history upload */}
       <div className="w-1/2">
         <h2>Reviewer History</h2>
@@ -65,6 +67,11 @@ const ReviewPage = () => {
 
           <p className="text-lg">Add from 4 to 10 reviews for best results</p>
         </div>
+      </div>
+
+      {/* Right side - Target product */}
+      <div className="w-1/2">
+        <TargetProductCard />
       </div>
     </section>
   );

@@ -154,3 +154,12 @@
     @apply h-12
   }
 }
+
+@layer utilities {
+  .field-label {
+    @apply text-sm font-bold uppercase text-[#A78B7D];
+  }
+  .field-input {
+    @apply h-12
+  }
+}
