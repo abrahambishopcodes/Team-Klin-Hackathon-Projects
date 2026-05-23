@@ -5,11 +5,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 
-import { simulateReview } from "@/api"
+import { simulateReview, type SimulateReviewResponse } from "@/api"
 import { useMutation } from "@tanstack/react-query"
 import { useReviewsStore } from "@/hooks/useReviewsStore"
 import type { ReviewFormValues } from "./add-review-dialog"
 import toast from "react-hot-toast"
+import { useNavigate } from "react-router-dom"
 
 export interface TargetProductFormValues {
   name: string
@@ -20,6 +21,7 @@ export interface TargetProductFormValues {
 
 const TargetProductCard = () => {
   const reviews = useReviewsStore((state) => state.reviews)
+  const navigate = useNavigate()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: ({
@@ -29,8 +31,13 @@ const TargetProductCard = () => {
       reviews: ReviewFormValues[]
       targetProduct: TargetProductFormValues
     }) => simulateReview(reviews, targetProduct),
-    onSuccess: (data) => {
-      console.log(data)
+    onSuccess: (data: SimulateReviewResponse, variables) => {
+      navigate("/simulate-review-result", {
+        state: {
+          result: data,
+          targetProduct: variables.targetProduct
+        }
+      })
     }
   })
 

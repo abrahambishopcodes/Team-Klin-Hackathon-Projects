@@ -21,7 +21,7 @@ const ReviewPage = () => {
         <ScrollArea className="mt-8 h-full max-h-120 pr-4">
           <div className="flex flex-col gap-4">
             {reviews.length > 0 ? (reviews.map((review, i) => (
-              <ReviewCard key={`${review.item}-${i}`} review={review} />
+              <ReviewCard key={`${review.item}-${i}`} review={review} index={i} />
             ))) : (
               <div className="w-full h-full flex flex-col gap-4 items-center justify-center mt-10">
                 <LetterText className="size-10" />
