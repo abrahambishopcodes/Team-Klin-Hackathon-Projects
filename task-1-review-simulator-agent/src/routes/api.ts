@@ -179,7 +179,7 @@ WORD CHOICE RULE (very important):
 Hard requirements:
 - Output ONLY the review text, nothing else
 - Keep it between ${wordRange.min} and ${wordRange.max} words (aim ~${wordRange.predicted})
-- Use normal paragraphs (1–3). Do NOT put every sentence on a new line.
+- Use normal paragraphs (1–3). Do NOT put every sentence on a line.
 - Be specific (mention concrete issues/details), avoid generic lines
 - Avoid these words/phrases: "hassle", "seamless", "game-changer", "top-notch", "must-have", "blew me away", "changed my life", "highly recommend"
 

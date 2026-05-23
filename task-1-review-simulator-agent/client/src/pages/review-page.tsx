@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddReviewDialog } from "./components/add-review-dialog";
 import TargetProductCard from "./components/target-product-card";
 import { useReviewsStore } from "@/hooks/useReviewsStore";
+import { LetterText } from "lucide-react";
 
 
 
@@ -19,9 +20,14 @@ const ReviewPage = () => {
         {/* Reviews */}
         <ScrollArea className="mt-8 h-full max-h-120 pr-4">
           <div className="flex flex-col gap-4">
-            {reviews.map((review, i) => (
+            {reviews.length > 0 ? (reviews.map((review, i) => (
               <ReviewCard key={`${review.item}-${i}`} review={review} />
-            ))}
+            ))) : (
+              <div className="w-full h-full flex flex-col gap-4 items-center justify-center mt-10">
+                <LetterText className="size-10" />
+                <p className="text-lg">No reviews yet</p>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
