@@ -4,8 +4,12 @@ import { createLogger } from './logger.js'
 import { createPineconeClient } from './services/pinecone.js'
 import { createGroqClient } from './services/groq.js'
 import { createApiRouter } from './routes/api.js'
+import cors from "cors"
 
 const app = express()
+
+app.use(express.json())
+app.use(cors())
 
 const config = loadConfig()
 const log = createLogger({ debug: config.logging.debug })
@@ -24,7 +28,7 @@ const api = createApiRouter({
   log
 })
 
-app.use(express.json())
+
 app.use('/api', api)
 
 
