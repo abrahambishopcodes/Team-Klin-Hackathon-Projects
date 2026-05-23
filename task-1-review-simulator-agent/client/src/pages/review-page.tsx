@@ -1,7 +1,6 @@
 import ReviewCard from "./components/review-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { AddReviewDialog } from "./components/add-review-dialog";
 
 export interface ReviewedProduct {
   title: string;
@@ -61,11 +60,8 @@ const ReviewPage = () => {
           </div>
         </ScrollArea>
 
-        <div className="w-full flex flex-col items-center mt-4 gap-4">
-          <Button className="text-lg" variant="outline">
-            <PlusCircle />
-            Add Review
-          </Button>
+        <div className="w-full flex flex-col items-center mt-8 gap-4">
+          <AddReviewDialog />
 
           <p className="text-lg">Add from 4 to 10 reviews for best results</p>
         </div>

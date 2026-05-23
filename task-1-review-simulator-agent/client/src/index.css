@@ -24,6 +24,7 @@
     --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
     --color-input: var(--input);
+    --color-input-background: var(--input-background);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-accent-foreground: var(--accent-foreground);
@@ -68,6 +69,7 @@
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklab(39.971000000000004% 0.02391 0.02634);
     --input: oklch(0.922 0 0);
+    --input-background: oklch(33.014% 0.02454 51.245);
     --ring: oklch(0.708 0 0);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
