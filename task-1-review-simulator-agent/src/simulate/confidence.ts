@@ -2,13 +2,22 @@ export function computeConfidenceScore(
   similarUsersCount: number,
   { categoryMatch, hasTargetCategory }: { categoryMatch: boolean; hasTargetCategory: boolean }
 ): number {
-  let score = Math.round(similarUsersCount * 8)
+  // Base score from similar users (1 user = 12%, 10 users = 85%)
+  let score = Math.round(similarUsersCount * 8.5)
   score = Math.min(85, score)
 
-  if (hasTargetCategory) score = categoryMatch ? Math.min(95, score + 10) : Math.min(70, score)
-  else score = Math.min(80, score)
+  // Category matching is the strongest signal
+  if (hasTargetCategory) {
+    score = categoryMatch ? Math.min(92, score + 12) : Math.min(75, score + 5)
+  } else {
+    score = Math.min(78, score)
+  }
 
-  if (similarUsersCount < 3) score = Math.min(60, score)
-  return Math.max(0, Math.min(95, score))
+  // Penalize if we have too few similar users
+  if (similarUsersCount < 2) score = Math.min(55, score)
+  else if (similarUsersCount < 4) score = Math.min(70, score)
+  
+  // Cap at 90% since 99% is unrealistic - always some uncertainty in ML
+  return Math.max(40, Math.min(90, score))
 }
 

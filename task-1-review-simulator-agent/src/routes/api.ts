@@ -4,6 +4,7 @@ import type Groq from 'groq-sdk'
 import type { Logger } from '../logger.js'
 import { buildLiveProfile } from '../domain/userProfile.js'
 import { predictRating } from '../domain/rating.js'
+import type { RatingPredictionInput } from '../domain/rating.js'
 import { buildStage1AnalysisPrompt, buildStage2GenerationPrompt, defaultAnalysis } from '../domain/prompts.js'
 import { computeConfidenceScore } from '../simulate/confidence.js'
 import { computeTargetWordRange, finalizeReview, reviewIssues } from '../domain/postProcess.js'
@@ -47,6 +48,8 @@ export function createApiRouter({
         'user_id',
         'avg_rating',
         'harshness',
+        'review_count',
+        'categories',
         'is_nigerian',
         'nigerian_intensity',
         'sample_reviews',
@@ -86,7 +89,29 @@ export function createApiRouter({
         categoryMatch = false
       }
 
-      const predictedRating = predictRating(userProfile as any, similarUsers)
+      const predictionInput: RatingPredictionInput = {
+        avg_rating: userProfile.avg_rating,
+        review_count: userProfile.review_count,
+        rating_distribution: userProfile.rating_distribution,
+        rating_variance: userProfile.rating_variance,
+        harshness: userProfile.harshness,
+        recent_trend: userProfile.recent_trend,
+        mentions_price: userProfile.mentions_price,
+        gives_advice: userProfile.gives_advice,
+        mentions_service: userProfile.mentions_service,
+        vocabulary_richness: userProfile.vocabulary_richness,
+        sarcastic_tendency: userProfile.sarcastic_tendency,
+        category_ratings: userProfile.category_ratings,
+        is_nigerian: userProfile.nigerianStyle?.isNigerian ?? false,
+        nigerian_score: userProfile.nigerianStyle?.nigerianScore ?? 0
+      }
+
+      const predictedRatingResult = predictRating(
+        predictionInput,
+        similarUsers,
+        target_item?.category || ''
+      )
+      const predictedRating = predictedRatingResult.predicted_rating
       const start = Date.now()
 
       log.debug('Stage 1: analyzing user behavior...')
@@ -187,11 +212,15 @@ ${simulatedReview}`
           similar_users_found: similarUsers.length,
           category_match: categoryMatch,
           user_bias: Number(((Number((userProfile as any).avg_rating || 0) - 4.38)).toFixed(2)),
-          harshness: (userProfile as any).harshness,
-          style_detected: (userProfile as any).is_nigerian
-            ? `Nigerian Pidgin (${(userProfile as any).nigerian_intensity})`
+          harshness: userProfile.harshness,
+          style_detected: userProfile.nigerianStyle?.isNigerian
+            ? `Nigerian Pidgin (${userProfile.nigerianStyle.intensity})`
             : 'Standard English',
-          avg_review_length: (userProfile as any).avg_review_length
+          avg_review_length: userProfile.avg_review_length,
+          prediction_breakdown: predictedRatingResult.breakdown,
+          prediction_method: predictedRatingResult.method_used,
+          raw_score: predictedRatingResult.raw_score,
+          prediction_confidence: predictedRatingResult.confidence
         }
       })
     } catch (e: any) {
@@ -202,4 +231,3 @@ ${simulatedReview}`
 
   return router
 }
-
