@@ -11,6 +11,7 @@ export type UserReview = {
 
 export type LiveUserProfile = {
   avg_rating: number
+  review_count: number
   rating_distribution: Record<number, number>
   harshness: string
   avg_review_length: number
@@ -29,12 +30,14 @@ export type LiveUserProfile = {
   category_expertise: string
   nigerianStyle: ReturnType<typeof analyseNigerianStyle>
   summary: string
+  category_ratings: Array<{ category: string; avg_rating: number; review_count: number }>
 }
 
 export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Logger } = {}): LiveUserProfile {
   if (!userHistory || userHistory.length === 0) {
     return {
       avg_rating: 0,
+      review_count: 0,
       rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       harshness: 'unknown',
       avg_review_length: 0,
@@ -52,7 +55,8 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
       recent_trend: 'stable',
       category_expertise: 'versatile reviewer',
       nigerianStyle: analyseNigerianStyle([]),
-      summary: ''
+      summary: '',
+      category_ratings: []
     }
   }
 
@@ -60,6 +64,7 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
   if (stars.length === 0) {
     return {
       avg_rating: 0,
+      review_count: 0,
       rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       harshness: 'unknown',
       avg_review_length: 0,
@@ -77,17 +82,15 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
       recent_trend: 'stable',
       category_expertise: 'versatile reviewer',
       nigerianStyle: analyseNigerianStyle(userHistory),
-      summary: ''
+      summary: '',
+      category_ratings: []
     }
   }
 
   const avg = stars.reduce((a, b) => a + b, 0) / stars.length
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
   stars.forEach(s => { dist[Math.round(s)] = (dist[Math.round(s)] || 0) + 1 })
-  Object.keys(dist).forEach(k => {
-    const key = Number(k)
-    dist[key] = Number(((dist[key] / stars.length) * 100).toFixed(1))
-  })
+  // Store raw counts — predictRating handles normalisation internally
 
   const harshness = avg < 3.5 ? 'harsh' : avg > 4.2 ? 'generous' : 'balanced'
   const reviewLengths = userHistory.map(r => (r.text || '').length)
@@ -160,6 +163,21 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
   }
 
   const categories = userHistory.map(r => (r.category || '').toLowerCase()).filter(Boolean)
+  
+  // Group reviews by category and compute per-category avg rating
+  const categoryMap: Record<string, { total: number; count: number }> = {}
+  userHistory.forEach(r => {
+    const cat = (r.category || 'Unknown').trim()
+    if (!categoryMap[cat]) categoryMap[cat] = { total: 0, count: 0 }
+    categoryMap[cat].total += parseFloat(String(r.stars ?? '')) || 0
+    categoryMap[cat].count++
+  })
+  const category_ratings = Object.entries(categoryMap).map(([category, data]) => ({
+    category,
+    avg_rating: parseFloat((data.total / data.count).toFixed(2)),
+    review_count: data.count
+  }))
+
   let category_expertise = 'versatile reviewer'
   if (categories.length > 0) {
     const unique = [...new Set(categories)]
@@ -204,6 +222,7 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
 
   return {
     avg_rating: Number(avg.toFixed(2)),
+    review_count: userHistory.length,
     rating_distribution: dist,
     harshness,
     avg_review_length: avgLength,
@@ -221,7 +240,7 @@ export function buildLiveProfile(userHistory: UserReview[], { log }: { log?: Log
     recent_trend,
     category_expertise,
     nigerianStyle,
-    summary
+    summary,
+    category_ratings
   }
 }
-
