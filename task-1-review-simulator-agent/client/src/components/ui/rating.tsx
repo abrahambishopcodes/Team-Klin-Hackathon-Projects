@@ -80,9 +80,10 @@ function Rating({
      */
     onRatingChange?: (rating: number) => void
   }) {
+  const normalizedRating = Number.isFinite(rating) ? rating : 0
   const [hoveredRating, setHoveredRating] = useState<number | null>(null)
   const displayRating =
-    editable && hoveredRating !== null ? hoveredRating : rating
+    editable && hoveredRating !== null ? hoveredRating : normalizedRating
 
   const handleStarClick = (starRating: number) => {
     if (editable && onRatingChange) {
