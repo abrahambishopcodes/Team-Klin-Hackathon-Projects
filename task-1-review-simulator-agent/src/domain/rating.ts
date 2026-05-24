@@ -44,7 +44,13 @@ export type PredictionResult = {
   raw_score: number             // pre-rounding float, useful for debugging
   confidence: number            // 0-100
   method_used: string           // explains how prediction was made
-  breakdown: Record<string, number>  // each component's contribution
+  breakdown: Record<string, number | string>  // each component's contribution
+}
+
+export type LLMRatingOverride = {
+  confidenceInAdjustment?: number
+  shouldOverrideMath?: boolean
+  patternMatchVerdict?: string
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -204,7 +210,9 @@ function blendSimilarUsers(
 export function predictRating(
   userProfile: RatingPredictionInput,
   similarUsers: SimilarUser[],
-  targetCategory: string = ''
+  targetCategory: string = '',
+  llmAdjustment: number = 0,
+  llmOverride: LLMRatingOverride = {}
 ): PredictionResult {
 
   const breakdown: Record<string, number> = {}
@@ -356,7 +364,34 @@ export function predictRating(
     }
   }
 
-  // ── STEP 7: FINAL ROUNDING AND CONFIDENCE ─────────────────────────────────
+  // ── STEP 7: LLM BEHAVIOURAL PATTERN ADJUSTMENT ────────────────────────────
+
+  const clampedLLMAdjustment = clamp(Number(llmAdjustment) || 0, -2, 2)
+  const statisticalTrustWeight = Math.max(0, 1 - (userReviewCount / 30))
+  const adjustmentConfidence = clamp(Number(llmOverride.confidenceInAdjustment) || 0, 0, 1)
+  const strongPattern = [
+    'strong_match',
+    'strong_mismatch'
+  ].includes(String(llmOverride.patternMatchVerdict || '').toLowerCase())
+  const overrideEligible = Boolean(llmOverride.shouldOverrideMath) &&
+    adjustmentConfidence >= 0.75 &&
+    Math.abs(clampedLLMAdjustment) >= 1.25
+
+  const overrideTrustWeight = overrideEligible
+    ? Math.max(statisticalTrustWeight, strongPattern ? 1 : adjustmentConfidence)
+    : statisticalTrustWeight
+  const llmTrustWeight = clamp(overrideTrustWeight, 0, 1)
+  const weightedLLMAdj = clampedLLMAdjustment * llmTrustWeight
+
+  rawScore = clamp(rawScore + weightedLLMAdj, 1, 5)
+  breakdown['llm_behaviour_pattern_adj'] = parseFloat(weightedLLMAdj.toFixed(3))
+  breakdown['llm_trust_weight'] = parseFloat(llmTrustWeight.toFixed(3))
+  breakdown['llm_raw_adj'] = clampedLLMAdjustment
+  breakdown['llm_adjustment_confidence'] = parseFloat(adjustmentConfidence.toFixed(3))
+  breakdown['llm_override_applied'] = overrideEligible ? 1 : 0
+  breakdown['llm_statistical_trust_weight'] = parseFloat(statisticalTrustWeight.toFixed(3))
+
+  // ── STEP 8: FINAL ROUNDING AND CONFIDENCE ─────────────────────────────────
 
   const finalRating = roundHalf(rawScore)
   
