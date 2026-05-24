@@ -7,7 +7,7 @@ const Layout = () => {
     <SidebarProvider>
       <AppSidebar />
       {/* Main content */}
-      <main className="w-full flex flex-col flex-1 min-w-0 overflow-hidden min-h-screen lg:h-screen">
+      <main className="w-full flex flex-col flex-1 min-w-0 overflow-hidden min-h-screen">
         <div className="p-4 w-full h-full">
           <SidebarTrigger className="" />
           <Outlet />

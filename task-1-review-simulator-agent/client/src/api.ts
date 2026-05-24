@@ -3,7 +3,7 @@ import type { ReviewFormValues } from "./pages/components/add-review-dialog"
 import type { TargetProductFormValues } from "./pages/components/target-product-card"
 
 const api = axios.create({
-    baseURL: "http://localhost:3000/api",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 })
 
 export interface SimulateReviewResponse {
