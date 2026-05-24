@@ -26,6 +26,7 @@ import { ProfileEditDialog } from "./components/profile-edit-dialog";
 const AiChatPage = () => {
 
   const [prompt, setPrompt] = useState("");
+  const [streamingStatus, setStreamingStatus] = useState("Reco is thinking...");
   const userProfile = useColdProfileStore((state) => state.userProfile);
 
   const {username, user_id, avatarUrl} = useUserStore();
@@ -35,19 +36,27 @@ const AiChatPage = () => {
 
   // mutation hook to handle api recommendation call
   const {mutateAsync, isPending} = useMutation({
-    mutationFn: (prompt: string) => generateRecommendation({
-      user_query: prompt,
-      user_id: user_id,
-      cold_start: user_id ? false : true,
-      user_persona: user_id ? null : JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
-    }),
+    mutationFn: (prompt: string) => generateRecommendation(
+      {
+        user_query: prompt,
+        user_id: user_id,
+        cold_start: user_id ? false : true,
+        user_persona: user_id ? null : JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
+      },
+      {
+        onStatus: (status) => setStreamingStatus(status),
+      },
+    ),
+    onMutate: () => {
+      setStreamingStatus("Reco is thinking...");
+    },
     onSuccess: (data) => {
-      if (data.success) {
-        addMessage(data.data, "assistant", "Reco");
-      }
+      addMessage(data, "assistant", "Reco");
+      setStreamingStatus("Reco is thinking...");
     },
     onError: (error: Error) => {
       console.log(error);
+      setStreamingStatus("Reco is thinking...");
       addMessage("Sorry, I'm having trouble getting the task done, try again! If issue persists, contact support or try again later.", "assistant", "Reco");
     }
   })
@@ -79,7 +88,7 @@ const AiChatPage = () => {
         messages.length === 0 ? (
           <NoMessageScreen setPrompt={setPrompt} />
         ) : (
-          <ConversationMessages messages={messages} isPending={isPending} />
+          <ConversationMessages messages={messages} isPending={isPending} streamingStatus={streamingStatus} />
         )
       }
 

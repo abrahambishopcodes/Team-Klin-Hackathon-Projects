@@ -30,9 +30,10 @@ export interface MessageType {
   interface ConversationMessagesProps {
     messages: MessageType[],
     isPending: boolean,
+    streamingStatus: string,
   }
 
-export function ConversationMessages({messages, isPending}: ConversationMessagesProps) {
+export function ConversationMessages({messages, isPending, streamingStatus}: ConversationMessagesProps) {
 
   const [open, setOpen] = useState(true);
 
@@ -92,7 +93,7 @@ export function ConversationMessages({messages, isPending}: ConversationMessages
               <MessageContent className="text-lg">
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Loader size={20} />
-                  <span>Reco is thinking...</span>
+                  <span>{streamingStatus}</span>
                 </div>
               </MessageContent>
               <MessageAvatar name="Reco" src="/reco_logo.svg" />
