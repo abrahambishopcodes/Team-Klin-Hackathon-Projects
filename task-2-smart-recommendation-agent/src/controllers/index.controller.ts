@@ -16,6 +16,7 @@ import { RerankResponseDataItem } from "voyageai";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
 
 import AppError from "../utils/AppError";
+import { send } from "process";
 
 interface ProductFields {
   title?: string;
@@ -32,11 +33,28 @@ interface SearchHit {
   fields: ProductFields;
 }
 
+interface SSEvent {
+  type: string;
+  data: string | object;
+}
+
 // * Controller to recommend products to user
 export const recommendProductsController = async (
   req: Request,
   res: Response,
 ) => {
+
+  // Important headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  res.flushHeaders();
+
+  const sendEvent = (data: SSEvent) => {
+    res.write(`event: ${JSON.stringify(data)}\n\n`);
+  }
+
   const { user_query, user_id, cold_start, user_persona } = req.body;
 
   let user = null;
@@ -55,12 +73,22 @@ export const recommendProductsController = async (
     }
   }
 
+  sendEvent({
+    type: "status",
+    data: "comprehending user persona ..."
+  })
+
   //   get the user persona based on whether the message is cold_start or not
   const persona = user_persona || (user?.persona_summary);
 
   if (!persona) {
     throw new AppError("User persona is required", 400);
   }
+
+  sendEvent({
+    type: "status",
+    data: "refining user query based on persona ..."
+  })
 
   // generate query based on whether the message is cold_start or not
   let generatedQuery = null;
@@ -73,6 +101,11 @@ export const recommendProductsController = async (
   if (!generatedQuery) {
     throw new AppError("Failed to generate query", 400);
   }
+
+  sendEvent({
+    type: "status",
+    data: "embedding user query ..."
+  })
 
   // embedded the user query
   const embeddingResponse = await voyage.embed({
@@ -87,6 +120,11 @@ export const recommendProductsController = async (
     throw new Error("Failed to generate embedding");
   }
 
+  sendEvent({
+    type: "status",
+    data: "searching products database for user query ..."
+  })
+
   // used the vector to query the pinecone index and rerank the results
   const productsRecommendations = await index.searchRecords({
     query: {
@@ -95,6 +133,11 @@ export const recommendProductsController = async (
     },
     namespace: "task2_items",
   });
+
+  sendEvent({
+    type: "status",
+    data: "reranking products to get most revelant ones to user's needs ..."
+  })
 
   // We reconstruct the document fields to be used for reranking
   const documents = (
@@ -124,6 +167,11 @@ export const recommendProductsController = async (
     topK: 10,
   });
 
+  sendEvent({
+    type: "status",
+    data: "extracting products from reranked results ..."
+  })
+
   // get the original documents from the ranked results index
   const reRankedProducts = reRankedResults.data?.map(
     (result: RerankResponseDataItem) => {
@@ -138,6 +186,11 @@ export const recommendProductsController = async (
       };
     },
   );
+
+  sendEvent({
+    type: "status",
+    data: "generating final product recommendations with reasoning ..."
+  })
 
   // use the llm to recommend final products from the reranked results and reason on why it is recommending the product
   const aiProductRecommendationResponse = await aiRecommendProducts(
@@ -162,12 +215,23 @@ export const recommendProductsController = async (
     };
   });
 
-  sendSuccessResponse(res, 200, "Recommendations fetched successfully", {
-    interpretedQuery: generatedQuery,
-    products: finalResults,
-    main_reasoning: recommendedProducts.main_reasoning,
-    tokenUsage: aiProductRecommendationResponse.usage,
-  });
+
+  sendEvent({
+    type: "final_response",
+    data: {
+      interpretedQuery: generatedQuery,
+      products: finalResults,
+      main_reasoning: recommendedProducts.main_reasoning,
+      tokenUsage: aiProductRecommendationResponse.usage,
+    },
+  })
+
+  sendEvent({
+    type: "end",
+    data: ""
+  })
+
+  res.end();
 };
 
 // * Controller to generate a structured and detailed user_persona based on the user's cold status text
