@@ -28,6 +28,8 @@ services:
       args:
         VITE_API_URL: /api
     restart: always
+    environment:
+      BACKEND_UPSTREAM: backend:5500
     depends_on:
       backend:
         condition: service_healthy
