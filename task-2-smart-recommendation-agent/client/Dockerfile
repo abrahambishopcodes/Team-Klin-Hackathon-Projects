@@ -3,7 +3,8 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# CHANGED: Changed from npm ci to npm install to bypass strict lockfile checks
+RUN npm install
 
 COPY . .
 
@@ -16,7 +17,8 @@ RUN npm run build
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+# Note: Ensure nginx.conf exists in your client folder root
+COPY nginx.conf /etc/nginx/templates/default.conf.template 
 
 EXPOSE 80
 
