@@ -37,8 +37,17 @@ export const generateQuery = async (
       {
         role: "system",
         content: `
-        You are an expert in generating queries for a vector database to retrieve relevant information. return just the query alone, do not add any extra texts or formatings.
-        You are to generate a query in natural language based on the user's original query and their profile.`
+        You are an expert at rewriting shopping queries for vector retrieval over a product catalog.
+        Your job is to generate one natural-language retrieval query based on the user's original query and their persona.
+
+        Rules:
+        - Return only the query text. No labels, no quotes, no markdown, no explanation.
+        - Preserve the user's main product intent and any explicit hard constraints.
+        - Use persona signals to sharpen the query: budget level, quality expectations, preferred categories, brand signals, purchase drivers, and dealbreakers.
+        - If the persona suggests adjacent cross-domain interests that are genuinely relevant, you may include them only when they strengthen retrieval for the user's request.
+        - Do not invent constraints, brands, specs, or use cases that are not stated or clearly supported by the persona.
+        - Prefer concrete product attributes that help retrieval: category, use case, quality level, price band, key features, and style/taste signals.
+        - Keep the query compact but specific. One sentence only.`
       },
       {
         role: "user",
@@ -46,7 +55,7 @@ export const generateQuery = async (
         User query: ${userQuery}
         User profile: ${JSON.stringify(user_persona)}
         
-        Generate a query that will help retrieve relevant information from the vector database.`,
+        Generate a single retrieval query that will help fetch the most relevant products from the vector database.`,
       },
     ],
   });
@@ -64,6 +73,22 @@ export const rewriteColdStartQuery = async (
   model: "llama-3.3-70b-versatile",
   messages: [
     {
+      role: "system",
+      content: `
+You rewrite shopping queries for vector retrieval over a product catalog.
+
+Rules:
+- Return only the rewritten query as plain text. No preamble, no quotes, no markdown.
+- Keep the user's main intent intact.
+- Because this is a cold-start user, use only the preferences provided. Do not rely on purchase history.
+- Preserve explicit hard constraints from the original query.
+- If confidence is low, stay very close to the user's wording and only add clearly supported detail.
+- If confidence is medium or high, enrich the query with supported preference signals such as budget, quality level, style, preferred categories, and dealbreakers.
+- Only add cross-domain signals when they are clearly relevant and improve retrieval for the stated request.
+- Do not invent brands, specifications, or needs that are not stated or strongly implied.
+- Keep the rewrite compact and retrieval-friendly. One sentence only.`
+    },
+    {
       role: "user",
       content: `
 Rewrite this product search query to be more specific and useful for retrieval.
@@ -77,10 +102,9 @@ ${JSON.stringify(userPersona)}
 Original query: "${userQuery}"
 
 If confidence is low, keep the rewrite close to the original query.
-If confidence is high, enrich it with inferred signals.
+If confidence is medium or high, enrich it with supported signals only.
 
-Return only the rewritten query as plain text. One sentence. No preamble.
-Generate a query that will help retrieve relevant information from the vector database.
+Generate a single rewritten query that will help retrieve the most relevant products from the vector database.
   `.trim()
     }
   ]
@@ -317,7 +341,9 @@ Adjust your recommendations accordingly:
         content: `You are a product recommendation agent who deeply understands the user's needs and preferences. Before making any recommendation, 
         you must reason carefully through the following steps in order.
         Do not skip any step. Do not rush to conclusions. Reference actual profile signals
-        in every decision. Respond like you understand and is talking directly to the user using pronouns like 'you'.`
+        in every decision. Respond like you understand and is talking directly to the user using pronouns like 'you'.
+        Recommend only products from the provided candidate list.
+        Your final output must contain only 5 to 8 products, no more and no fewer than needed within that range.`
       },
       {
         role: "user",
@@ -345,6 +371,12 @@ Write your analysis before moving on.
 STEP 2 — INTERPRET THE QUERY WITH CONTEXT
 Do not take the query literally. Ask yourself:
 - Given this specific user's profile, what do they ACTUALLY mean?
+- Is there a relevant cross-domain angle suggested by their persona that still fits this request?
+
+Cross-domain guidance:
+- You may recommend adjacent-category products when they clearly fit the user's taste, use case, and purchase drivers.
+- Cross-domain does not mean random exploration. It must still be a strong answer to the user's current request.
+- Prefer direct matches first. Use adjacent-category recommendations only when they add clear value or solve the request better.
 
 STEP 3 — SCORE EACH CANDIDATE
 For every candidate evaluate:
@@ -362,7 +394,7 @@ If yes, what is the closest available alternative and why is it still valuable?
 Be honest about limitations. Do not pretend a weak match is strong.
 
 STEP 5 — RANK AND JUSTIFY
-Select your top 10. Order matters — your rank 1 must be your strongest 
+Select your final 5 to 8 products. Order matters — your rank 1 must be your strongest 
 match, not just a good match. Each recommendation must reference specific 
 signals from the user's profile, not generic reasons.
 
@@ -371,7 +403,7 @@ Good reason: "You rated 3 health monitors 4+ stars and mentioned
               battery life in all positive reviews. This device has 
               a 14-day battery and is your price range."
 
-              RECOMMEND JUST 5 TO 8 PRODUCTS THAT BEST FITS THE USER'S NEEDS AND PREFERENCES
+              RECOMMEND ONLY 5 TO 8 PRODUCTS THAT BEST FIT THE USER'S NEEDS AND PREFERENCES
 
         `.trim(),
       },
