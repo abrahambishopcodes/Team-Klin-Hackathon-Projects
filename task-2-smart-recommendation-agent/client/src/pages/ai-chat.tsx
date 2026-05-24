@@ -30,6 +30,12 @@ const AiChatPage = () => {
   const userProfile = useColdProfileStore((state) => state.userProfile);
 
   const {username, user_id, avatarUrl} = useUserStore();
+  const isColdStart = !user_id;
+  const currentUserPersona = isColdStart
+    ? JSON.parse(localStorage.getItem("reco_user_profile") || "{}")
+    : undefined;
+  const displayName = username ?? "Cold Start - You";
+  const avatarImage = avatarUrl ?? undefined;
 
   
   const {messages, addMessage} = useMessageStore();
@@ -39,9 +45,9 @@ const AiChatPage = () => {
     mutationFn: (prompt: string) => generateRecommendation(
       {
         user_query: prompt,
-        user_id: user_id,
-        cold_start: user_id ? false : true,
-        user_persona: user_id ? null : JSON.parse(localStorage.getItem("reco_user_profile") || "{}"),
+        user_id: user_id ?? undefined,
+        cold_start: isColdStart,
+        user_persona: currentUserPersona,
       },
       {
         onStatus: (status) => setStreamingStatus(status),
@@ -66,7 +72,7 @@ const AiChatPage = () => {
     if (!prompt) return;
 
     // prevent user from sending prompt if there is no profile and it is cold start
-    if (!user_id && !userProfile) {
+    if (isColdStart && !userProfile) {
       toast("We need to know a little about you first, please fill in your profile");
       return;
     }
@@ -96,8 +102,8 @@ const AiChatPage = () => {
       <div className="max-w-5xl w-full flex flex-col mt-auto gap-2 mb-8">
 
         <Badge className="bg-muted text-foreground text-sm p-4">
-          {user_id && <img src={avatarUrl} alt={username} className="size-6 rounded-full" />}
-          {user_id ? username : "Cold Start - You"}
+          {user_id && avatarImage && <img src={avatarImage} alt={displayName} className="size-6 rounded-full" />}
+          {user_id ? displayName : "Cold Start - You"}
         </Badge>
 
         <InputGroup className="bg-muted border-border p-2 flex items-center">

@@ -1,17 +1,19 @@
 
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
-# Change current working directory
 WORKDIR /app
 
-# copy the package.json first to cache
-COPY package.json .
-RUN npm install
+COPY package*.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npm ci
 
-COPY . .
+COPY tsconfig.json ./
+COPY src ./src
+
+RUN npm run prisma:generate
 RUN npm run build
 
-EXPOSE 3001
+EXPOSE 5500
 
-CMD [ "npm", "run", "start" ]
-
+CMD ["sh", "-c", "node dist/server.js"]

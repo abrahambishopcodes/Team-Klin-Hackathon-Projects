@@ -93,9 +93,9 @@ export const Reasoning = memo(
       setIsOpen(newOpen)
     }
 
-    return (
-      <ReasoningContext.Provider
-        value={{ isStreaming, isOpen: isOpen ?? false, setIsOpen, duration }}
+      return (
+        <ReasoningContext.Provider
+        value={{ isStreaming, isOpen: isOpen ?? false, setIsOpen, duration: duration ?? 0 }}
       >
         <Disclosure
           className={cn("not-prose mb-4", className)}
