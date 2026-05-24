@@ -9,8 +9,10 @@ import { simulateReview, type SimulateReviewResponse } from "@/api"
 import { useMutation } from "@tanstack/react-query"
 import { useReviewsStore } from "@/hooks/useReviewsStore"
 import type { ReviewFormValues } from "./add-review-dialog"
+import axios from "axios"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
+import { Spinner } from "@/components/ui/spinner"
 
 export interface TargetProductFormValues {
   name: string
@@ -59,10 +61,18 @@ const TargetProductCard = () => {
       return
     }
 
-    await mutateAsync({
-      reviews,
-      targetProduct: data
-    })
+    try {
+      await mutateAsync({
+        reviews,
+        targetProduct: data
+      })
+    } catch (error) {
+      const message = axios.isAxiosError<{ message?: string; error?: string }>(error)
+        ? error.response?.data?.message || error.response?.data?.error || error.message
+        : "Unable to simulate review. Please try again."
+
+      toast.error(message)
+    }
     
   }
 
@@ -111,7 +121,7 @@ const TargetProductCard = () => {
                 </Field>
 
                 <Button type="submit" disabled={isPending} className="w-full h-12 text-lg font-bold mt-4">
-                    Simulate Review
+                    {isPending ? <div className="flex items-center gap-2"><Spinner /> Simulating Review ...</div> : "Simulate Review"}
                 </Button>
             </form>
         </CardContent>
