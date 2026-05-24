@@ -16,7 +16,6 @@ import { RerankResponseDataItem } from "voyageai";
 import { sendSuccessResponse } from "../utils/apiResponseHelpers";
 
 import AppError from "../utils/AppError";
-import { send } from "process";
 
 interface ProductFields {
   title?: string;
